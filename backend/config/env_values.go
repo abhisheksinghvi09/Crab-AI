@@ -104,16 +104,16 @@ func LoadEnv() error {
 	Env.JWTSecret = getRequiredEnv("JWT_SECRET", "neobase_jwt_secret")
 	Env.JWTExpirationMilliseconds = getIntEnvWithDefault("JWT_EXPIRATION_MILLISECONDS", 1000*60*60*24*10)                 // 10 days default
 	Env.JWTRefreshExpirationMilliseconds = getIntEnvWithDefault("_JWT_REFRESH_EXPIRATION_MILLISECONDS", 1000*60*60*24*30) // 30 days default
-	Env.AdminUser = getEnvWithDefault("NEOBASE_ADMIN_USERNAME", "bhaskar")
-	Env.AdminPassword = getEnvWithDefault("NEOBASE_ADMIN_PASSWORD", "bhaskar")
+	Env.AdminUser = getEnvWithDefault("CRAB_ADMIN_USERNAME", "bhaskar")
+	Env.AdminPassword = getEnvWithDefault("CRAB_ADMIN_PASSWORD", "bhaskar")
 
 	// Database configs
-	Env.MongoURI = getRequiredEnv("NEOBASE_MONGODB_URI", "mongodb://localhost:27017/neobase")
-	Env.MongoDatabaseName = getRequiredEnv("NEOBASE_MONGODB_NAME", "neobase")
-	Env.RedisHost = getRequiredEnv("NEOBASE_REDIS_HOST", "localhost")
-	Env.RedisPort = getRequiredEnv("NEOBASE_REDIS_PORT", "6379")
-	Env.RedisUsername = getEnvWithDefault("NEOBASE_REDIS_USERNAME", "")
-	Env.RedisPassword = getRequiredEnv("NEOBASE_REDIS_PASSWORD", "default")
+	Env.MongoURI = getRequiredEnv("CRAB_MONGODB_URI", "mongodb://localhost:27017/neobase")
+	Env.MongoDatabaseName = getRequiredEnv("CRAB_MONGODB_NAME", "neobase")
+	Env.RedisHost = getRequiredEnv("CRAB_REDIS_HOST", "localhost")
+	Env.RedisPort = getRequiredEnv("CRAB_REDIS_PORT", "6379")
+	Env.RedisUsername = getEnvWithDefault("CRAB_REDIS_USERNAME", "")
+	Env.RedisPassword = getRequiredEnv("CRAB_REDIS_PASSWORD", "default")
 
 	// Example DB For Development Environment
 	Env.ExampleDatabaseType = getRequiredEnv("EXAMPLE_DB_TYPE", "postgres")
