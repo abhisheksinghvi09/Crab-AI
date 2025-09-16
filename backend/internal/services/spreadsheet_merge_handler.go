@@ -338,7 +338,7 @@ func (h *SpreadsheetMergeHandler) getTableColumns() ([]string, error) {
 		SELECT column_name 
 		FROM information_schema.columns 
 		WHERE table_schema = '%s' AND table_name = '%s'
-		AND column_name NOT LIKE '\_%'
+		AND column_name NOT LIKE '\\_%%'
 		ORDER BY ordinal_position
 	`, h.schemaName, h.tableName)
 	
