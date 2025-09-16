@@ -23,6 +23,7 @@ type IRedisRepositories interface {
 	GetAllByField(ctx context.Context, modelType interface{}, filterFunc func(interface{}) bool) ([]interface{}, error)
 	TTL(key string, ctx context.Context) (time.Duration, error)
 	StartPipeline(ctx context.Context) *Pipeline
+	Ping(ctx context.Context) error
 }
 
 func NewRedisRepositories(client *redis.Client) *RedisRepositories {
@@ -161,4 +162,9 @@ func (p *Pipeline) Del(ctx context.Context, keys ...string) {
 // PipelineExpire adds an EXPIRE command to the pipeline
 func (p *Pipeline) Expire(ctx context.Context, key string, expiration time.Duration) {
 	p.pipe.Expire(ctx, key, expiration)
+}
+
+// Ping checks if Redis is accessible
+func (r *RedisRepositories) Ping(ctx context.Context) error {
+	return r.Client.Ping(ctx).Err()
 }

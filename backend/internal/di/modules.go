@@ -148,6 +148,13 @@ func Initialize() {
 		log.Fatalf("Failed to provide waitlist handler: %v", err)
 	}
 
+	// Provide health handler
+	if err := DiContainer.Provide(func(mongoClient *mongodb.MongoDBClient, redisRepo redis.IRedisRepositories, llmManager *llm.Manager) *handlers.HealthHandler {
+		return handlers.NewHealthHandler(mongoClient, redisRepo, llmManager)
+	}); err != nil {
+		log.Fatalf("Failed to provide health handler: %v", err)
+	}
+
 	// Provide services
 	if err := DiContainer.Provide(func(userRepo repositories.UserRepository, tokenRepo repositories.TokenRepository, jwt utils.JWTService, emailService services.EmailService) services.AuthService {
 		return services.NewAuthService(userRepo, jwt, tokenRepo, emailService)
@@ -355,6 +362,18 @@ func GetGitHubHandler() (*handlers.GitHubHandler, error) {
 func GetWaitlistHandler() (*handlers.WaitlistHandler, error) {
 	var handler *handlers.WaitlistHandler
 	err := DiContainer.Invoke(func(h *handlers.WaitlistHandler) {
+		handler = h
+	})
+	if err != nil {
+		return nil, err
+	}
+	return handler, nil
+}
+
+// GetHealthHandler retrieves the HealthHandler from the DI container
+func GetHealthHandler() (*handlers.HealthHandler, error) {
+	var handler *handlers.HealthHandler
+	err := DiContainer.Invoke(func(h *handlers.HealthHandler) {
 		handler = h
 	})
 	if err != nil {

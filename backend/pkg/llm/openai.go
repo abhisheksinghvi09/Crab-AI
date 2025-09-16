@@ -242,3 +242,25 @@ func (c *OpenAIClient) GetModelInfo() ModelInfo {
 		MaxCompletionTokens: c.maxCompletionTokens,
 	}
 }
+
+func (c *OpenAIClient) HealthCheck(ctx context.Context) error {
+	// Perform a simple health check by making a minimal API call
+	req := openai.ChatCompletionRequest{
+		Model: c.model,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: "ping",
+			},
+		},
+		MaxCompletionTokens: 1,
+		Temperature:         0,
+	}
+
+	_, err := c.client.CreateChatCompletion(ctx, req)
+	if err != nil {
+		return fmt.Errorf("OpenAI health check failed: %v", err)
+	}
+
+	return nil
+}

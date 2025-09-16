@@ -319,3 +319,22 @@ func (c *GeminiClient) GetModelInfo() ModelInfo {
 		MaxCompletionTokens: c.maxCompletionTokens,
 	}
 }
+
+func (c *GeminiClient) HealthCheck(ctx context.Context) error {
+	// Perform a simple health check by making a minimal API call
+	model := c.client.GenerativeModel(c.model)
+	model.SetMaxOutputTokens(1)
+	model.SetTemperature(0.0)
+
+	// Create a simple test prompt
+	resp, err := model.GenerateContent(ctx, genai.Text("ping"))
+	if err != nil {
+		return fmt.Errorf("Gemini health check failed: %v", err)
+	}
+
+	if resp == nil || len(resp.Candidates) == 0 {
+		return fmt.Errorf("Gemini health check failed: no response")
+	}
+
+	return nil
+}
