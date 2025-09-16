@@ -125,24 +125,4 @@ External Integrations:
 3. Import the specification into your preferred diagramming tool
 4. Export in multiple formats for different use cases
 
-## Maintenance
-
-This documentation should be updated when:
-- New services or components are added
-- Architecture patterns change
-- External integrations are modified
-- Security measures are updated
-- Performance optimizations are implemented
-- New database types are supported
-- Additional LLM providers are integrated
-
-## Contributing
-
-When updating this documentation:
-1. Maintain consistency with the existing format
-2. Update both the ASCII diagram and component descriptions
-3. Add new components to the diagram specification
-4. Update the technology stack if new dependencies are added
-5. Document any breaking changes or migration requirements
-
 This documentation serves as the definitive reference for understanding and working with the Crab-AI backend architecture.
