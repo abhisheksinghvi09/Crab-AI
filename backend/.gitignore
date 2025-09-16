@@ -1,3 +1,4 @@
 .env
 DS_Store
-cmd/.env
+cmd/.envmain
+main

@@ -28,6 +28,15 @@ Includes:
 - Grouping and container definitions
 - Export format recommendations
 
+### `architecture-diagram.drawio`
+Ready-to-use Draw.io diagram file that can be:
+- **Opened directly** in Draw.io/Diagrams.net
+- **Imported** into other diagramming tools
+- **Exported** to PNG, SVG, PDF formats
+- **Modified** and customized as needed
+
+The diagram includes all system components with proper color coding, connections, and layout following the architectural specification.
+
 ## Architecture Overview
 
 The Crab-AI backend is built using a **layered architecture pattern** with the following key layers:
