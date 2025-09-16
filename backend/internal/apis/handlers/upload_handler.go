@@ -73,15 +73,15 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 
 	// Get merge options for advanced merge
 	mergeOptions := services.MergeOptions{
-		Strategy:         mergeStrategy,
-		IgnoreCase:       c.DefaultPostForm("ignoreCase", "true") == "true",
-		TrimWhitespace:   c.DefaultPostForm("trimWhitespace", "true") == "true",
-		HandleNulls:      c.DefaultPostForm("handleNulls", "empty"),
-		AddNewCols:       c.DefaultPostForm("addNewColumns", "true") == "true",
-		DropMissingCols:  c.DefaultPostForm("dropMissingColumns", "false") == "true",
-		UpdateExisting:   c.DefaultPostForm("updateExisting", "true") == "true",
-		InsertNew:        c.DefaultPostForm("insertNew", "true") == "true",
-		DeleteMissing:    c.DefaultPostForm("deleteMissing", "false") == "true",
+		Strategy:        mergeStrategy,
+		IgnoreCase:      c.DefaultPostForm("ignoreCase", "true") == "true",
+		TrimWhitespace:  c.DefaultPostForm("trimWhitespace", "true") == "true",
+		HandleNulls:     c.DefaultPostForm("handleNulls", "empty"),
+		AddNewCols:      c.DefaultPostForm("addNewColumns", "true") == "true",
+		DropMissingCols: c.DefaultPostForm("dropMissingColumns", "false") == "true",
+		UpdateExisting:  c.DefaultPostForm("updateExisting", "true") == "true",
+		InsertNew:       c.DefaultPostForm("insertNew", "true") == "true",
+		DeleteMissing:   c.DefaultPostForm("deleteMissing", "false") == "true",
 	}
 
 	log.Printf("UploadHandler -> Processing file: %s as table: %s", header.Filename, tableName)
@@ -102,7 +102,7 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 			return
 		}
 	}
-	
+
 	// Use unified processor (exactly like Google Sheets)
 	// This will handle all analysis, region detection, and storage
 	result, statusCode, err := h.chatService.ProcessAndStoreSpreadsheetUnified(
@@ -272,7 +272,7 @@ func (h *UploadHandler) DownloadTableData(c *gin.Context) {
 	var data *dtos.SpreadsheetDownloadResponse
 	var statusCode uint32
 	var err error
-	
+
 	if len(rowIDs) > 0 {
 		// Get filtered data
 		data, statusCode, err = h.chatService.DownloadSpreadsheetTableDataWithFilter(userID, chatID, tableName, rowIDs)
@@ -280,13 +280,13 @@ func (h *UploadHandler) DownloadTableData(c *gin.Context) {
 		// Get all data
 		data, statusCode, err = h.chatService.DownloadSpreadsheetTableData(userID, chatID, tableName)
 	}
-	
+
 	if err != nil {
 		c.JSON(int(statusCode), gin.H{"error": err.Error()})
 		return
 	}
-	
-	log.Printf("DownloadTableData -> Got %d columns and %d rows for table %s", 
+
+	log.Printf("DownloadTableData -> Got %d columns and %d rows for table %s",
 		len(data.Columns), len(data.Rows), tableName)
 
 	if format == "csv" {

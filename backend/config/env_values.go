@@ -1,8 +1,8 @@
 package config
 
 import (
-	"fmt"
 	"crab-ai/internal/constants"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -64,13 +64,13 @@ type Environment struct {
 	SMTPFromEmail string
 
 	// Spreadsheet PostgreSQL configs
-	SpreadsheetPostgresHost       string
-	SpreadsheetPostgresPort       string
-	SpreadsheetPostgresDatabase   string
-	SpreadsheetPostgresUsername   string
-	SpreadsheetPostgresPassword   string
-	SpreadsheetPostgresSSLMode    string
-	SpreadsheetDataEncryptionKey  string
+	SpreadsheetPostgresHost      string
+	SpreadsheetPostgresPort      string
+	SpreadsheetPostgresDatabase  string
+	SpreadsheetPostgresUsername  string
+	SpreadsheetPostgresPassword  string
+	SpreadsheetPostgresSSLMode   string
+	SpreadsheetDataEncryptionKey string
 
 	// Google OAuth configs
 	GoogleClientID     string
@@ -198,7 +198,7 @@ func getFloatEnvWithDefault(key string, defaultValue float64) float64 {
 	if strValue == "" {
 		return defaultValue
 	}
-	
+
 	value, err := strconv.ParseFloat(strValue, 64)
 	if err != nil {
 		fmt.Printf("Warning: Invalid value for %s, using default: %f\n", key, defaultValue)

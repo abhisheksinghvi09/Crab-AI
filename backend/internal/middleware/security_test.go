@@ -127,7 +127,7 @@ func TestSanitizeString(t *testing.T) {
 
 func TestAPIError(t *testing.T) {
 	err := NewAPIError(ErrorTypeValidation, "test message", http.StatusBadRequest)
-	
+
 	assert.Equal(t, ErrorTypeValidation, err.Type)
 	assert.Equal(t, "test message", err.Message)
 	assert.Equal(t, http.StatusBadRequest, err.StatusCode)

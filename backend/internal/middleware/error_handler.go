@@ -12,13 +12,13 @@ import (
 type ErrorType string
 
 const (
-	ErrorTypeValidation    ErrorType = "validation_error"
-	ErrorTypeAuth         ErrorType = "authentication_error"
-	ErrorTypePermission   ErrorType = "permission_error"
-	ErrorTypeNotFound     ErrorType = "not_found_error"
-	ErrorTypeInternal     ErrorType = "internal_error"
-	ErrorTypeRateLimit    ErrorType = "rate_limit_error"
-	ErrorTypeExternalAPI  ErrorType = "external_api_error"
+	ErrorTypeValidation  ErrorType = "validation_error"
+	ErrorTypeAuth        ErrorType = "authentication_error"
+	ErrorTypePermission  ErrorType = "permission_error"
+	ErrorTypeNotFound    ErrorType = "not_found_error"
+	ErrorTypeInternal    ErrorType = "internal_error"
+	ErrorTypeRateLimit   ErrorType = "rate_limit_error"
+	ErrorTypeExternalAPI ErrorType = "external_api_error"
 )
 
 type APIError struct {
@@ -97,7 +97,7 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 		// Check if there are any errors
 		if len(c.Errors) > 0 {
 			lastError := c.Errors.Last()
-			
+
 			// Check if it's our structured API error
 			if apiErr, ok := lastError.Err.(*APIError); ok {
 				handleAPIError(c, apiErr)

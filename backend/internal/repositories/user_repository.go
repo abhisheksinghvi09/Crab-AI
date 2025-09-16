@@ -2,10 +2,10 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"crab-ai/internal/models"
 	"crab-ai/pkg/mongodb"
 	"crab-ai/pkg/redis"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"

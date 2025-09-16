@@ -19,13 +19,13 @@ type SpreadsheetUploadResponse struct {
 
 // SpreadsheetTableDataResponse represents paginated table data
 type SpreadsheetTableDataResponse struct {
-	TableName   string                   `json:"table_name"`
-	Columns     []string                 `json:"columns"`
-	Rows        []map[string]interface{} `json:"rows"`
-	TotalRows   int                      `json:"total_rows"`
-	Page        int                      `json:"page"`
-	PageSize    int                      `json:"page_size"`
-	TotalPages  int                      `json:"total_pages"`
+	TableName  string                   `json:"table_name"`
+	Columns    []string                 `json:"columns"`
+	Rows       []map[string]interface{} `json:"rows"`
+	TotalRows  int                      `json:"total_rows"`
+	Page       int                      `json:"page"`
+	PageSize   int                      `json:"page_size"`
+	TotalPages int                      `json:"total_pages"`
 }
 
 // SpreadsheetDownloadResponse represents data for downloading

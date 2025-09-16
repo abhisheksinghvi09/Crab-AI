@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"crab-ai/config"
 	"crab-ai/internal/apis/routes"
 	"crab-ai/internal/di"
 	"crab-ai/internal/middleware"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -57,13 +57,13 @@ func main() {
 		if config.Env.LandingPageCorsAllowedOrigin != "" {
 			fmt.Printf("🌐 Landing Page: %s\n", config.Env.LandingPageCorsAllowedOrigin)
 		}
-		
+
 		allowedOrigins := []string{config.Env.CorsAllowedOrigin}
 		if config.Env.LandingPageCorsAllowedOrigin != "" {
 			allowedOrigins = append(allowedOrigins, config.Env.LandingPageCorsAllowedOrigin)
 		}
 		fmt.Printf("🚀 CORS Origins: %v\n", allowedOrigins)
-		
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			config.Fatal("NeoBase failed to start:", err)
 		}

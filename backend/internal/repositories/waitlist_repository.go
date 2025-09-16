@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"crab-ai/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"crab-ai/internal/models"
 )
 
 type WaitlistRepository struct {

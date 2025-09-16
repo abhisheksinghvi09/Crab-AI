@@ -2,11 +2,11 @@ package llm
 
 import (
 	"context"
+	"crab-ai/internal/constants"
+	"crab-ai/internal/models"
 	"encoding/json"
 	"fmt"
 	"log"
-	"crab-ai/internal/constants"
-	"crab-ai/internal/models"
 
 	"github.com/sashabaranov/go-openai"
 )

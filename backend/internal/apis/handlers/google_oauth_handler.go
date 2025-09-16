@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"crab-ai/config"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"crab-ai/config"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
@@ -36,10 +36,10 @@ func NewGoogleOAuthHandler() *GoogleOAuthHandler {
 func (h *GoogleOAuthHandler) InitiateGoogleAuth(c *gin.Context) {
 	// Get optional state parameter from query
 	state := c.DefaultQuery("state", "")
-	
+
 	// Generate OAuth URL
 	authURL := h.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"auth_url": authURL,
 	})
@@ -109,7 +109,7 @@ func (h *GoogleOAuthHandler) ValidateGoogleSheetAccess(c *gin.Context) {
 
 	// Create client and test access to the sheet
 	client := h.oauthConfig.Client(c.Request.Context(), token)
-	
+
 	// Try to get spreadsheet metadata
 	url := fmt.Sprintf("https://sheets.googleapis.com/v4/spreadsheets/%s", req.SheetID)
 	resp, err := client.Get(url)

@@ -1,13 +1,13 @@
 package utils
 
 import (
+	"crab-ai/config"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
-	"crab-ai/config"
 )
 
 // AESGCMCrypto provides AES-GCM encryption and decryption
@@ -20,11 +20,11 @@ func NewAESGCMCrypto(key string) (*AESGCMCrypto, error) {
 	// Validate key length (AES-GCM supports 16, 24, or 32 bytes)
 	keyBytes := []byte(key)
 	keyLen := len(keyBytes)
-	
+
 	if keyLen != 16 && keyLen != 24 && keyLen != 32 {
 		return nil, fmt.Errorf("invalid key length: %d bytes. AES-GCM requires 16, 24, or 32 bytes", keyLen)
 	}
-	
+
 	return &AESGCMCrypto{
 		key: keyBytes,
 	}, nil

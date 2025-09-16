@@ -51,19 +51,19 @@ type LLMDBConfig struct {
 
 // HealthStatus represents the health status of an LLM provider
 type HealthStatus struct {
-	Provider    string
-	IsHealthy   bool
-	LastChecked time.Time
-	Error       error
+	Provider     string
+	IsHealthy    bool
+	LastChecked  time.Time
+	Error        error
 	ResponseTime time.Duration
 }
 
 // RequestMetrics holds metrics for LLM requests
 type RequestMetrics struct {
-	Provider        string
-	TotalRequests   int64
-	SuccessfulRequests int64
-	FailedRequests  int64
+	Provider            string
+	TotalRequests       int64
+	SuccessfulRequests  int64
+	FailedRequests      int64
 	AverageResponseTime time.Duration
-	LastRequestTime time.Time
+	LastRequestTime     time.Time
 }

@@ -1,7 +1,6 @@
 package di
 
 import (
-	"log"
 	"crab-ai/config"
 	"crab-ai/internal/apis/handlers"
 	"crab-ai/internal/constants"
@@ -12,6 +11,7 @@ import (
 	"crab-ai/pkg/llm"
 	"crab-ai/pkg/mongodb"
 	"crab-ai/pkg/redis"
+	"log"
 	"time"
 
 	"go.uber.org/dig"
@@ -84,7 +84,7 @@ func Initialize() {
 		manager.RegisterDriver(constants.DatabaseTypeClickhouse, dbmanager.NewClickHouseDriver())
 		manager.RegisterDriver(constants.DatabaseTypeMongoDB, dbmanager.NewMongoDBDriver())
 		manager.RegisterDriver(constants.DatabaseTypeSpreadsheet, dbmanager.NewSpreadsheetDriver())
-		
+
 		// Register schema fetchers
 		manager.RegisterFetcher(constants.DatabaseTypePostgreSQL, func(db dbmanager.DBExecutor) dbmanager.SchemaFetcher {
 			return &dbmanager.PostgresDriver{}
@@ -104,7 +104,7 @@ func Initialize() {
 		manager.RegisterFetcher(constants.DatabaseTypeSpreadsheet, func(db dbmanager.DBExecutor) dbmanager.SchemaFetcher {
 			return &dbmanager.PostgresDriver{}
 		})
-		
+
 		return manager, nil
 	}); err != nil {
 		log.Fatalf("Failed to provide DB manager: %v", err)

@@ -2,13 +2,13 @@ package dbmanager
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"log"
 	"crab-ai/config"
 	"crab-ai/internal/apis/dtos"
 	"crab-ai/internal/utils"
 	"crab-ai/pkg/redis"
+	"database/sql"
+	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -490,7 +490,7 @@ func (d *GoogleSheetsDriver) storeSheetData(db *sql.DB, schemaName, tableName st
 						convertedValue, conversionErr := d.convertValueToType(rawValue, dataType.PostgreSQLType)
 						if conversionErr != nil {
 							// Instead of skipping the row, store NULL for invalid values
-							log.Printf("CONVERSION_WARNING: Sheet '%s', Column '%s', Row %d: Cannot convert '%s' to %s, storing as NULL", 
+							log.Printf("CONVERSION_WARNING: Sheet '%s', Column '%s', Row %d: Cannot convert '%s' to %s, storing as NULL",
 								tableName, header, i+rowIdx+1, rawValue, dataType.PostgreSQLType)
 							value = "" // Will be formatted as NULL by formatSQLValue
 						} else {

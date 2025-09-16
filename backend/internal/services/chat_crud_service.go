@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"crab-ai/config"
 	"crab-ai/internal/apis/dtos"
 	"crab-ai/internal/constants"
@@ -12,6 +10,8 @@ import (
 	"crab-ai/internal/utils"
 	"crab-ai/pkg/dbmanager"
 	"crab-ai/pkg/llm"
+	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -1988,7 +1988,7 @@ func (s *chatService) GetImportMetadata(ctx context.Context, userID, chatID stri
 	if chat == nil {
 		return nil, http.StatusNotFound, fmt.Errorf("chat not found")
 	}
-	
+
 	// Verify ownership
 	if chat.UserID != userObjID {
 		return nil, http.StatusForbidden, fmt.Errorf("unauthorized access to chat")

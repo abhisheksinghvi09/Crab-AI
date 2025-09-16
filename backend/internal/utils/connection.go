@@ -35,21 +35,21 @@ func GenerateConfigKey(config map[string]interface{}) string {
 			typeStr = t
 		}
 	}
-	
+
 	hostStr := ""
 	if config["host"] != nil {
 		if h, ok := config["host"].(string); ok {
 			hostStr = h
 		}
 	}
-	
+
 	databaseStr := ""
 	if config["database"] != nil {
 		if d, ok := config["database"].(string); ok {
 			databaseStr = d
 		}
 	}
-	
+
 	// Create a unique key based on connection details
 	key := fmt.Sprintf("%s:%s:%s:%s:%s",
 		typeStr,

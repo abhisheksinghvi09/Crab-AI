@@ -14,9 +14,9 @@ type ColumnDataType struct {
 	PostgreSQLType string // PostgreSQL specific type
 	SQLType        string // Generic SQL type
 	IsNullable     bool
-	HasMixedTypes  bool   // If column has mixed types that couldn't be unified
-	ErrorCount     int    // Number of values that couldn't be converted to the inferred type
-	SampleSize     int    // Number of non-null values analyzed
+	HasMixedTypes  bool // If column has mixed types that couldn't be unified
+	ErrorCount     int  // Number of values that couldn't be converted to the inferred type
+	SampleSize     int  // Number of non-null values analyzed
 }
 
 // DataTypeInferrer provides methods for inferring data types from sample data
@@ -40,7 +40,7 @@ func (d *DataTypeInferrer) InferColumnTypes(headers []string, data [][]interface
 	}
 
 	result := make(map[string]ColumnDataType)
-	
+
 	// Initialize result with default TEXT type
 	for _, header := range headers {
 		result[header] = ColumnDataType{
@@ -70,9 +70,9 @@ func (d *DataTypeInferrer) InferColumnTypes(headers []string, data [][]interface
 		if colIdx >= len(headers) {
 			continue
 		}
-		
+
 		columnData := make([]interface{}, 0, sampleSize)
-		
+
 		// Collect sample data for this column
 		for rowIdx := 0; rowIdx < sampleSize && rowIdx < len(data); rowIdx++ {
 			if colIdx < len(data[rowIdx]) && data[rowIdx][colIdx] != nil {
@@ -89,7 +89,7 @@ func (d *DataTypeInferrer) InferColumnTypes(headers []string, data [][]interface
 		result[header] = inferredType
 
 		log.Printf("DataTypeInferrer -> Column '%s': %s (sample: %d, errors: %d, mixed: %t)",
-			header, inferredType.PostgreSQLType, inferredType.SampleSize, 
+			header, inferredType.PostgreSQLType, inferredType.SampleSize,
 			inferredType.ErrorCount, inferredType.HasMixedTypes)
 	}
 
@@ -110,7 +110,7 @@ func (d *DataTypeInferrer) inferSingleColumnType(columnData []interface{}) Colum
 	}
 
 	sampleSize := len(columnData)
-	
+
 	// Type counters
 	intCount := 0
 	floatCount := 0
@@ -124,7 +124,7 @@ func (d *DataTypeInferrer) inferSingleColumnType(columnData []interface{}) Colum
 	// Analyze each value
 	for _, value := range columnData {
 		valueStr := strings.TrimSpace(fmt.Sprintf("%v", value))
-		
+
 		if d.isInteger(valueStr) {
 			intCount++
 		} else if d.isFloat(valueStr) {
@@ -155,8 +155,8 @@ func (d *DataTypeInferrer) inferSingleColumnType(columnData []interface{}) Colum
 	emailPct := float64(emailCount) / total
 
 	// Decision thresholds - More aggressive for clear majorities
-	const highConfidence = 0.85 // 85% of values match the type
-	const mediumConfidence = 0.70 // 70% of values match the type  
+	const highConfidence = 0.85    // 85% of values match the type
+	const mediumConfidence = 0.70  // 70% of values match the type
 	const majorityThreshold = 0.60 // 60% majority - should still infer type with errors
 
 	// Determine the best type based on confidence levels
@@ -239,34 +239,34 @@ func (d *DataTypeInferrer) isInteger(value string) bool {
 	// Remove common number formatting (commas, spaces)
 	cleanValue := strings.ReplaceAll(value, ",", "")
 	cleanValue = strings.ReplaceAll(cleanValue, " ", "")
-	
+
 	// Handle negative numbers
 	cleanValue = strings.TrimPrefix(cleanValue, "-")
 	cleanValue = strings.TrimPrefix(cleanValue, "+")
-	
+
 	_, err := strconv.ParseInt(cleanValue, 10, 64)
 	return err == nil
 }
 
 func (d *DataTypeInferrer) isFloat(value string) bool {
-	// Remove common number formatting (commas, spaces) 
+	// Remove common number formatting (commas, spaces)
 	cleanValue := strings.ReplaceAll(value, ",", "")
 	cleanValue = strings.ReplaceAll(cleanValue, " ", "")
-	
+
 	// Handle negative numbers
 	cleanValue = strings.TrimPrefix(cleanValue, "-")
 	cleanValue = strings.TrimPrefix(cleanValue, "+")
-	
+
 	_, err := strconv.ParseFloat(cleanValue, 64)
 	return err == nil
 }
 
 func (d *DataTypeInferrer) isBoolean(value string) bool {
 	lower := strings.ToLower(value)
-	return lower == "true" || lower == "false" || 
-		   lower == "yes" || lower == "no" ||
-		   lower == "1" || lower == "0" ||
-		   lower == "y" || lower == "n"
+	return lower == "true" || lower == "false" ||
+		lower == "yes" || lower == "no" ||
+		lower == "1" || lower == "0" ||
+		lower == "y" || lower == "n"
 }
 
 func (d *DataTypeInferrer) isDate(value string) bool {

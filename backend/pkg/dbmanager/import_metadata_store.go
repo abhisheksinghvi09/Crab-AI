@@ -2,13 +2,13 @@ package dbmanager
 
 import (
 	"context"
+	"crab-ai/internal/apis/dtos"
+	"crab-ai/pkg/redis"
 	"encoding/json"
 	"fmt"
 	"log"
-	"crab-ai/internal/apis/dtos"
-	"crab-ai/pkg/redis"
 	"time"
-	
+
 	goredis "github.com/redis/go-redis/v9"
 )
 
@@ -27,18 +27,18 @@ func NewImportMetadataStore(redisRepo redis.IRedisRepositories) *ImportMetadataS
 // StoreMetadata stores import metadata for a connection
 func (s *ImportMetadataStore) StoreMetadata(chatID string, metadata *dtos.ImportMetadata) error {
 	key := fmt.Sprintf("import_metadata:%s", chatID)
-	
+
 	data, err := json.Marshal(metadata)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
-	
+
 	// Store with 7 day expiration
 	ctx := context.Background()
 	if err := s.redisRepo.Set(key, data, 7*24*time.Hour, ctx); err != nil {
 		return fmt.Errorf("failed to store metadata: %w", err)
 	}
-	
+
 	log.Printf("ImportMetadataStore -> Stored metadata for chat %s", chatID)
 	return nil
 }
@@ -46,7 +46,7 @@ func (s *ImportMetadataStore) StoreMetadata(chatID string, metadata *dtos.Import
 // GetMetadata retrieves import metadata for a connection
 func (s *ImportMetadataStore) GetMetadata(chatID string) (*dtos.ImportMetadata, error) {
 	key := fmt.Sprintf("import_metadata:%s", chatID)
-	
+
 	ctx := context.Background()
 	data, err := s.redisRepo.Get(key, ctx)
 	if err != nil {
@@ -55,28 +55,28 @@ func (s *ImportMetadataStore) GetMetadata(chatID string) (*dtos.ImportMetadata, 
 		}
 		return nil, fmt.Errorf("failed to get metadata: %w", err)
 	}
-	
+
 	if data == "" {
 		return nil, nil // No metadata found
 	}
-	
+
 	var metadata dtos.ImportMetadata
 	if err := json.Unmarshal([]byte(data), &metadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 	}
-	
+
 	return &metadata, nil
 }
 
 // DeleteMetadata removes import metadata for a connection
 func (s *ImportMetadataStore) DeleteMetadata(chatID string) error {
 	key := fmt.Sprintf("import_metadata:%s", chatID)
-	
+
 	ctx := context.Background()
 	if err := s.redisRepo.Del(key, ctx); err != nil {
 		return fmt.Errorf("failed to delete metadata: %w", err)
 	}
-	
+
 	log.Printf("ImportMetadataStore -> Deleted metadata for chat %s", chatID)
 	return nil
 }

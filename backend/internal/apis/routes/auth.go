@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"log"
 	"crab-ai/internal/apis/middlewares"
 	"crab-ai/internal/di"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )

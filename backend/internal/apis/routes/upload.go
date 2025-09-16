@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"log"
 	"crab-ai/internal/apis/handlers"
 	"crab-ai/internal/apis/middlewares"
 	"crab-ai/internal/di"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +15,7 @@ func SetupUploadRoutes(router *gin.Engine) {
 	if err != nil {
 		log.Fatalf("Failed to get chat handler: %v", err)
 	}
-	
+
 	// Create upload handler using the chat service
 	uploadHandler := handlers.NewUploadHandler(chatHandler.GetChatService())
 
@@ -24,7 +24,7 @@ func SetupUploadRoutes(router *gin.Engine) {
 	{
 		// File upload for spreadsheet connections
 		protected.POST("/:chatID/file", uploadHandler.UploadFile)
-		
+
 		// Table data operations
 		protected.GET("/:chatID/tables/:tableName", uploadHandler.GetTableData)
 		protected.DELETE("/:chatID/tables/:tableName", uploadHandler.DeleteTable)

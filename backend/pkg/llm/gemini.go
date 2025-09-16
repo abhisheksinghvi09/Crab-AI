@@ -2,12 +2,12 @@ package llm
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"log"
 	"crab-ai/internal/constants"
 	"crab-ai/internal/models"
 	"crab-ai/internal/utils"
+	"encoding/json"
+	"fmt"
+	"log"
 	"strings"
 
 	"github.com/google/generative-ai-go/genai"

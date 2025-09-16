@@ -2,9 +2,9 @@ package repositories
 
 import (
 	"context"
-	"log"
 	"crab-ai/internal/models"
 	"crab-ai/pkg/mongodb"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -240,8 +240,8 @@ func (r *chatRepository) FindNextMessageByID(id primitive.ObjectID) (*models.Mes
 func (r *chatRepository) FindPinnedMessagesByChat(chatID primitive.ObjectID) ([]models.Message, error) {
 	var messages []models.Message
 	filter := bson.M{
-		"chat_id":    chatID,
-		"is_pinned":  true,
+		"chat_id":   chatID,
+		"is_pinned": true,
 	}
 
 	// Sort by pinnedAt descending (latest first)

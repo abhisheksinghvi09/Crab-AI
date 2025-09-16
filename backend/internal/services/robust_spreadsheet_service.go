@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
+	"crab-ai/internal/apis/dtos"
+	"crab-ai/pkg/dbmanager"
 	"database/sql"
 	"fmt"
 	"log"
-	"crab-ai/internal/apis/dtos"
-	"crab-ai/pkg/dbmanager"
 	"strings"
 	"time"
 )
@@ -19,53 +19,53 @@ func (s *chatService) ProcessSpreadsheetWithRobustAnalyzer(
 	baseTableName string,
 	data [][]interface{},
 ) (*dtos.SpreadsheetUploadResponse, error) {
-	
-	log.Printf("ProcessSpreadsheetWithRobustAnalyzer -> Starting for chat %s, base table %s", 
+
+	log.Printf("ProcessSpreadsheetWithRobustAnalyzer -> Starting for chat %s, base table %s",
 		chatID, baseTableName)
-	
+
 	// Get the connection info for this chat
 	connInfo, exists := s.dbManager.GetConnectionInfo(chatID)
 	if !exists {
 		return nil, fmt.Errorf("no connection found for chat %s", chatID)
 	}
-	
+
 	if connInfo.Config.Type != "spreadsheet" && connInfo.Config.Type != "google_sheets" {
-		return nil, fmt.Errorf("connection type %s does not support spreadsheet operations", 
+		return nil, fmt.Errorf("connection type %s does not support spreadsheet operations",
 			connInfo.Config.Type)
 	}
-	
+
 	// Get the database connection
 	conn, err := s.dbManager.GetConnection(chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get connection: %v", err)
 	}
-	
+
 	// Get the SQL DB connection
 	sqlDB := conn.GetDB()
 	if sqlDB == nil {
 		return nil, fmt.Errorf("failed to get SQL DB")
 	}
-	
+
 	// Get schema name
 	schemaName := fmt.Sprintf("conn_%s", chatID)
-	
+
 	// Use robust analyzer
 	robustAnalyzer := dbmanager.NewRobustSheetAnalyzer(data)
 	regions, err := robustAnalyzer.AnalyzeRobust()
 	if err != nil {
 		log.Printf("Warning: Robust analysis failed: %v, creating unstructured table", err)
-		
+
 		// Create fallback unstructured region
 		region := s.createUnstructuredRegion(data)
 		regions = []*dbmanager.DataRegion{region}
 	}
-	
+
 	if len(regions) == 0 {
 		log.Printf("No regions detected, creating unstructured table")
 		region := s.createUnstructuredRegion(data)
 		regions = []*dbmanager.DataRegion{region}
 	}
-	
+
 	// Process all detected regions
 	allTables := make([]string, 0)
 	totalRows := 0
@@ -73,32 +73,32 @@ func (s *chatService) ProcessSpreadsheetWithRobustAnalyzer(
 	overallQuality := 0.0
 	allIssues := make([]string, 0)
 	allSuggestions := make([]string, 0)
-	
+
 	for idx, region := range regions {
 		// Determine table name
 		tableName := baseTableName
 		if len(regions) > 1 {
 			tableName = fmt.Sprintf("%s_%d", baseTableName, idx+1)
 		}
-		
+
 		log.Printf("Processing region %d/%d as table '%s'", idx+1, len(regions), tableName)
 		log.Printf("  - Headers: %v", region.Headers)
 		log.Printf("  - Rows: %d", len(region.DataRows))
 		log.Printf("  - Quality: %.1f%%", region.Quality)
-		
+
 		// Store the region data
 		if err := s.storeRegionData(sqlDB, schemaName, tableName, region); err != nil {
 			log.Printf("Warning: Failed to store region %d: %v", idx+1, err)
 			continue
 		}
-		
+
 		allTables = append(allTables, tableName)
 		totalRows += len(region.DataRows)
 		if len(region.Headers) > totalColumns {
 			totalColumns = len(region.Headers)
 		}
 		overallQuality += region.Quality
-		
+
 		// Collect issues and suggestions
 		for _, issue := range region.Issues {
 			allIssues = append(allIssues, fmt.Sprintf("Table %s: %s", tableName, issue))
@@ -107,27 +107,27 @@ func (s *chatService) ProcessSpreadsheetWithRobustAnalyzer(
 			allSuggestions = append(allSuggestions, fmt.Sprintf("Table %s: %s", tableName, suggestion))
 		}
 	}
-	
+
 	if len(allTables) == 0 {
 		return nil, fmt.Errorf("failed to create any tables from spreadsheet data")
 	}
-	
+
 	// Calculate average quality
 	if len(regions) > 0 {
 		overallQuality = overallQuality / float64(len(regions))
 	}
-	
+
 	// Refresh schema
 	ctx := context.Background()
 	if _, err := s.RefreshSchema(ctx, userID, chatID, false); err != nil {
 		log.Printf("Warning: Failed to refresh schema: %v", err)
 	}
-	
+
 	// Update database name
 	if err := s.updateSpreadsheetDatabaseName(chatID); err != nil {
 		log.Printf("Warning: Failed to update database name: %v", err)
 	}
-	
+
 	// Prepare response
 	response := &dtos.SpreadsheetUploadResponse{
 		TableName:   strings.Join(allTables, ", "),
@@ -135,7 +135,7 @@ func (s *chatService) ProcessSpreadsheetWithRobustAnalyzer(
 		ColumnCount: totalColumns,
 		UploadedAt:  time.Now(),
 	}
-	
+
 	// Log metadata if available
 	if len(allIssues) > 0 || len(allSuggestions) > 0 || overallQuality < 100 {
 		metadata := map[string]interface{}{
@@ -149,7 +149,7 @@ func (s *chatService) ProcessSpreadsheetWithRobustAnalyzer(
 	} else {
 		log.Printf("Successfully created %d table(s) from spreadsheet", len(allTables))
 	}
-	
+
 	log.Printf("ProcessSpreadsheetWithRobustAnalyzer -> Completed successfully")
 	return response, nil
 }
@@ -158,7 +158,7 @@ func (s *chatService) ProcessSpreadsheetWithRobustAnalyzer(
 func (s *chatService) createUnstructuredRegion(data [][]interface{}) *dbmanager.DataRegion {
 	headers := []string{"row_num", "col_letter", "value"}
 	dataRows := make([][]interface{}, 0)
-	
+
 	for rowIdx, row := range data {
 		for colIdx, cell := range row {
 			if cell != nil && fmt.Sprintf("%v", cell) != "" {
@@ -171,12 +171,12 @@ func (s *chatService) createUnstructuredRegion(data [][]interface{}) *dbmanager.
 			}
 		}
 	}
-	
+
 	// Ensure at least one row
 	if len(dataRows) == 0 {
 		dataRows = append(dataRows, []interface{}{1, "A", "No data found"})
 	}
-	
+
 	return &dbmanager.DataRegion{
 		Headers:     headers,
 		DataRows:    dataRows,
@@ -195,32 +195,32 @@ func (s *chatService) storeRegionData(
 ) error {
 	// Sanitize table and column names
 	tableName = sanitizeTableName(tableName)
-	
+
 	// Drop existing table
 	dropQuery := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s CASCADE", schemaName, tableName)
 	if _, err := db.Exec(dropQuery); err != nil {
 		return fmt.Errorf("failed to drop existing table: %w", err)
 	}
-	
+
 	// Create column definitions
 	columns := make([]string, 0)
 	for _, header := range region.Headers {
 		colName := sanitizeColumnName(header)
 		columns = append(columns, fmt.Sprintf("%s TEXT", colName))
 	}
-	
+
 	// Add system columns
 	columns = append(columns, "_row_id SERIAL PRIMARY KEY")
 	columns = append(columns, "_imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-	
+
 	// Create table
-	createQuery := fmt.Sprintf("CREATE TABLE %s.%s (%s)", 
+	createQuery := fmt.Sprintf("CREATE TABLE %s.%s (%s)",
 		schemaName, tableName, strings.Join(columns, ", "))
-	
+
 	if _, err := db.Exec(createQuery); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
-	
+
 	// Insert data
 	if len(region.DataRows) > 0 {
 		// Prepare column names
@@ -228,7 +228,7 @@ func (s *chatService) storeRegionData(
 		for i, header := range region.Headers {
 			colNames[i] = sanitizeColumnName(header)
 		}
-		
+
 		// Batch insert for better performance
 		batchSize := 100
 		for i := 0; i < len(region.DataRows); i += batchSize {
@@ -236,14 +236,14 @@ func (s *chatService) storeRegionData(
 			if end > len(region.DataRows) {
 				end = len(region.DataRows)
 			}
-			
-			if err := s.insertBatch(db, schemaName, tableName, colNames, 
+
+			if err := s.insertBatch(db, schemaName, tableName, colNames,
 				region.DataRows[i:end]); err != nil {
 				log.Printf("Warning: Failed to insert batch %d-%d: %v", i, end, err)
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -258,13 +258,13 @@ func (s *chatService) insertBatch(
 	if len(rows) == 0 {
 		return nil
 	}
-	
+
 	// Build values for batch insert
 	valueStrings := make([]string, 0, len(rows))
-	
+
 	for _, row := range rows {
 		values := make([]string, 0, len(columns))
-		
+
 		for i := range columns {
 			var value string
 			if i < len(row) && row[i] != nil {
@@ -274,15 +274,15 @@ func (s *chatService) insertBatch(
 			}
 			values = append(values, fmt.Sprintf("'%s'", value))
 		}
-		
+
 		valueStrings = append(valueStrings, fmt.Sprintf("(%s)", strings.Join(values, ", ")))
 	}
-	
+
 	insertQuery := fmt.Sprintf("INSERT INTO %s.%s (%s) VALUES %s",
 		schemaName, tableName,
 		strings.Join(columns, ", "),
 		strings.Join(valueStrings, ", "))
-	
+
 	_, err := db.Exec(insertQuery)
 	return err
 }
@@ -296,20 +296,20 @@ func sanitizeTableName(name string) string {
 	result = strings.ReplaceAll(result, ".", "_")
 	result = strings.ReplaceAll(result, "(", "")
 	result = strings.ReplaceAll(result, ")", "")
-	
+
 	// Remove consecutive underscores
 	for strings.Contains(result, "__") {
 		result = strings.ReplaceAll(result, "__", "_")
 	}
-	
+
 	// Trim underscores
 	result = strings.Trim(result, "_")
-	
+
 	// Ensure it starts with a letter
 	if len(result) > 0 && (result[0] < 'a' || result[0] > 'z') {
 		result = "t_" + result
 	}
-	
+
 	return result
 }
 

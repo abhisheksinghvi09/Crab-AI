@@ -14,8 +14,8 @@ func RedisClient(redisHost, redisPort, redisUsername, redisPassword string) (*re
 	redisURL := fmt.Sprintf("%s:%s", redisHost, redisPort)
 
 	// Debug logging
-	log.Printf("Redis connection - Host: %s, Port: %s, Username: '%s', Password: %s", 
-		redisHost, redisPort, redisUsername, 
+	log.Printf("Redis connection - Host: %s, Port: %s, Username: '%s', Password: %s",
+		redisHost, redisPort, redisUsername,
 		strings.Repeat("*", len(redisPassword)))
 
 	// Create Redis options

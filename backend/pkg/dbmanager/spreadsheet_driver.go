@@ -2,11 +2,11 @@ package dbmanager
 
 import (
 	"context"
+	"crab-ai/config"
+	"crab-ai/internal/apis/dtos"
 	"database/sql"
 	"fmt"
 	"log"
-	"crab-ai/config"
-	"crab-ai/internal/apis/dtos"
 	"strings"
 )
 
@@ -17,11 +17,11 @@ type SpreadsheetDriver struct {
 
 // SpreadsheetTransaction wraps a PostgreSQL transaction with schema context
 type SpreadsheetTransaction struct {
-	pgTx       Transaction
-	conn       *Connection
-	schemaName string
+	pgTx          Transaction
+	conn          *Connection
+	schemaName    string
 	searchPathSet bool
-	driver     *SpreadsheetDriver
+	driver        *SpreadsheetDriver
 }
 
 // NewSpreadsheetDriver creates a new Spreadsheet driver
@@ -65,7 +65,7 @@ func (d *SpreadsheetDriver) Connect(cfg ConnectionConfig) (*Connection, error) {
 	conn.Config = cfg
 
 	// Note: Schema creation is now handled by the Manager after ChatID is set
-	
+
 	return conn, nil
 }
 
@@ -112,8 +112,6 @@ func (d *SpreadsheetDriver) GetSchemaInfo(conn *Connection, selectedTables []str
 
 	return schemaInfo, nil
 }
-
-
 
 // GetConnectionString returns a placeholder for CSV
 func (d *SpreadsheetDriver) GetConnectionString(cfg ConnectionConfig) string {
@@ -185,12 +183,10 @@ type spreadsheetSchemaWrapper struct {
 	chatID     string
 }
 
-
 func (w *spreadsheetSchemaWrapper) GetDB() *sql.DB {
 	sqlDB, _ := w.conn.DB.DB()
 	return sqlDB
 }
-
 
 func (w *spreadsheetSchemaWrapper) ExecuteRaw(query string) error {
 	return w.conn.DB.Exec(query).Error
@@ -244,23 +240,23 @@ func (d *SpreadsheetDriver) ExecuteQuery(ctx context.Context, conn *Connection, 
 	if schemaName == "" {
 		schemaName = fmt.Sprintf("conn_%s", conn.ChatID)
 	}
-	
+
 	// Set the search_path to the specific schema
 	setSearchPathQuery := fmt.Sprintf("SET search_path TO %s, public", schemaName)
 	if err := conn.DB.Exec(setSearchPathQuery).Error; err != nil {
 		log.Printf("SpreadsheetDriver -> ExecuteQuery -> Failed to set search path: %v", err)
 	}
-	
+
 	// Execute the query with PostgreSQL driver
 	result := d.postgresDriver.ExecuteQuery(ctx, conn, query, queryType, findCount)
-	
+
 	// Reset search path to default
 	if err := conn.DB.Exec("SET search_path TO public").Error; err != nil {
 		log.Printf("SpreadsheetDriver -> ExecuteQuery -> Failed to reset search path: %v", err)
 	}
-	
+
 	// No decryption needed - data is stored in plain text
-	
+
 	return result
 }
 
@@ -271,7 +267,7 @@ func (d *SpreadsheetDriver) BeginTx(ctx context.Context, conn *Connection) Trans
 	if pgTx == nil {
 		return nil
 	}
-	
+
 	// Wrap it with our spreadsheet transaction that sets the search path
 	return &SpreadsheetTransaction{
 		pgTx:       pgTx,
@@ -294,7 +290,7 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 		log.Printf("SpreadsheetDriver -> GetSchema -> Warning: Schema name not available from wrapper")
 		return &SchemaInfo{Tables: make(map[string]TableSchema)}, nil
 	}
-	
+
 	if schemaName == "" {
 		return &SchemaInfo{Tables: make(map[string]TableSchema)}, nil
 	}
@@ -304,7 +300,7 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 	if sqlDB == nil {
 		return nil, fmt.Errorf("failed to get SQL DB connection")
 	}
-	
+
 	// Test connection is still valid
 	if err := sqlDB.PingContext(ctx); err != nil {
 		log.Printf("SpreadsheetDriver -> GetSchema -> Connection ping failed: %v", err)
@@ -318,7 +314,7 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 		WHERE schemaname = '%s'
 		ORDER BY tablename;
 	`, schemaName)
-	
+
 	rows, err := sqlDB.QueryContext(ctx, tableQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tables in schema %s: %w", schemaName, err)
@@ -368,28 +364,28 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 			WHERE table_schema = '%s' AND table_name = '%s'
 			ORDER BY ordinal_position;
 		`, schemaName, tableName)
-		
+
 		colRows, err := sqlDB.QueryContext(ctx, columnQuery)
 		if err != nil {
 			log.Printf("SpreadsheetDriver -> GetSchema -> Error getting columns for table %s: %v", tableName, err)
 			continue
 		}
-		
+
 		for colRows.Next() {
 			var colName, dataType string
 			var isNullable string
 			var columnDefault, charMaxLength, numPrecision, numScale sql.NullString
-			
-			if err := colRows.Scan(&colName, &dataType, &isNullable, &columnDefault, 
+
+			if err := colRows.Scan(&colName, &dataType, &isNullable, &columnDefault,
 				&charMaxLength, &numPrecision, &numScale); err != nil {
 				continue
 			}
-			
+
 			// Skip internal columns
 			if strings.HasPrefix(colName, "_") {
 				continue
 			}
-			
+
 			table.Columns[colName] = ColumnInfo{
 				Name:         colName,
 				Type:         dataType,
@@ -398,7 +394,7 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 			}
 		}
 		colRows.Close()
-		
+
 		// Get constraints (including primary keys)
 		constraintQuery := fmt.Sprintf(`
 			SELECT 
@@ -413,7 +409,7 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 			WHERE tc.table_schema = '%s' AND tc.table_name = '%s'
 			ORDER BY tc.constraint_name, kcu.ordinal_position;
 		`, schemaName, tableName)
-		
+
 		constRows, err := sqlDB.QueryContext(ctx, constraintQuery)
 		if err == nil {
 			constraints := make(map[string]*ConstraintInfo)
@@ -422,7 +418,7 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 				if err := constRows.Scan(&constName, &constType, &colName); err != nil {
 					continue
 				}
-				
+
 				if _, exists := constraints[constName]; !exists {
 					constraints[constName] = &ConstraintInfo{
 						Name:    constName,
@@ -433,27 +429,27 @@ func (d *SpreadsheetDriver) GetSchema(ctx context.Context, db DBExecutor, select
 				constraints[constName].Columns = append(constraints[constName].Columns, colName)
 			}
 			constRows.Close()
-			
+
 			// Convert to the expected format
 			for name, info := range constraints {
 				table.Constraints[name] = *info
 			}
 		}
-		
+
 		// Get row count
 		countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, schemaName, tableName)
 		var count int64
 		if err := sqlDB.QueryRowContext(ctx, countQuery).Scan(&count); err == nil {
 			table.RowCount = count
 		}
-		
+
 		// Get table size
 		sizeQuery := fmt.Sprintf(`SELECT pg_total_relation_size('%s.%s')`, schemaName, tableName)
 		var size int64
 		if err := sqlDB.QueryRowContext(ctx, sizeQuery).Scan(&size); err == nil {
 			table.SizeBytes = size
 		}
-		
+
 		schema.Tables[tableName] = table
 	}
 
@@ -473,22 +469,22 @@ func (d *SpreadsheetDriver) FetchExampleRecords(ctx context.Context, db DBExecut
 	if !ok {
 		return nil, fmt.Errorf("invalid database wrapper for spreadsheet")
 	}
-	
+
 	// Build schema-qualified table name
 	schemaName := wrapper.schemaName
 	if schemaName == "" {
 		schemaName = fmt.Sprintf("conn_%s", wrapper.chatID)
 	}
 	qualifiedTable := fmt.Sprintf("%s.%s", schemaName, table)
-	
+
 	// Use the qualified table name to fetch records
 	records, err := d.postgresDriver.FetchExampleRecords(ctx, db, qualifiedTable, limit)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// No decryption needed - data is stored in plain text
-	
+
 	return records, nil
 }
 
@@ -497,12 +493,12 @@ func (t *SpreadsheetTransaction) setSearchPath(ctx context.Context) error {
 	if t.searchPathSet {
 		return nil
 	}
-	
+
 	schemaName := t.schemaName
 	if schemaName == "" {
 		schemaName = fmt.Sprintf("conn_%s", t.conn.ChatID)
 	}
-	
+
 	// Set the search_path to the specific schema
 	setSearchPathQuery := fmt.Sprintf("SET search_path TO %s, public", schemaName)
 	result, err := t.pgTx.ExecuteQuery(ctx, setSearchPathQuery)
@@ -512,7 +508,7 @@ func (t *SpreadsheetTransaction) setSearchPath(ctx context.Context) error {
 	if result.Error != nil {
 		return fmt.Errorf("failed to set search path: %s", result.Error.Message)
 	}
-	
+
 	t.searchPathSet = true
 	return nil
 }
@@ -529,12 +525,12 @@ func (t *SpreadsheetTransaction) ExecuteQuery(ctx context.Context, query string)
 			},
 		}, err
 	}
-	
+
 	// Execute query using the underlying PostgreSQL transaction
 	result, queryErr := t.pgTx.ExecuteQuery(ctx, query)
-	
+
 	// No decryption needed - data is stored in plain text
-	
+
 	return result, queryErr
 }
 
@@ -547,4 +543,3 @@ func (t *SpreadsheetTransaction) Commit() error {
 func (t *SpreadsheetTransaction) Rollback() error {
 	return t.pgTx.Rollback()
 }
-

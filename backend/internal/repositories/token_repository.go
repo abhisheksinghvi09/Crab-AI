@@ -2,11 +2,11 @@ package repositories
 
 import (
 	"context"
+	"crab-ai/config"
+	"crab-ai/pkg/redis"
 	"errors"
 	"fmt"
 	"log"
-	"crab-ai/config"
-	"crab-ai/pkg/redis"
 	"time"
 )
 

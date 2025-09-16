@@ -2,10 +2,10 @@ package dbmanager
 
 import (
 	"context"
+	"crab-ai/internal/apis/dtos"
 	"encoding/json"
 	"fmt"
 	"log"
-	"crab-ai/internal/apis/dtos"
 	"regexp"
 	"strconv"
 	"strings"
@@ -397,7 +397,7 @@ func processMongoDBQueryParams(paramsStr string) (string, error) {
 	paramsStr = strings.ReplaceAll(paramsStr, "\u2019", "'")  // Replace right smart quote
 	paramsStr = strings.ReplaceAll(paramsStr, "\u201C", "\"") // Replace left smart double quote
 	paramsStr = strings.ReplaceAll(paramsStr, "\u201D", "\"") // Replace right smart double quote
-	
+
 	// Handle single quotes for string values
 	// Use a standard approach instead of negative lookbehind which isn't supported in Go
 	singleQuoteRegex := regexp.MustCompile(`'([^']*)'`)
@@ -711,7 +711,7 @@ func processAggregationResultsFromCursor(cursor *mongo.Cursor, ctx context.Conte
 			},
 		}
 	}
-	
+
 	// Debug logging for aggregation results
 	log.Printf("processAggregationResultsFromCursor -> Decoded %d results from aggregation", len(results))
 
@@ -1359,7 +1359,7 @@ func ParseAggregationPipeline(pipelineStr string) ([]string, error) {
 	runes := []rune(pipelineStr)
 	for i := 0; i < len(runes); i++ {
 		char := runes[i]
-		
+
 		if escapeNext {
 			currentStage.WriteRune(char)
 			escapeNext = false
@@ -1429,7 +1429,7 @@ func ParseAggregationPipeline(pipelineStr string) ([]string, error) {
 		if stage != "" && stage != "," { // Don't add if it's just a comma
 			stages = append(stages, stage)
 		}
-		}
+	}
 
 	return stages, nil
 }

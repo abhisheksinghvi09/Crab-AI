@@ -11,26 +11,26 @@ import (
 )
 
 type Manager struct {
-	clients        map[string]Client
-	healthStatus   map[string]*HealthStatus
-	metrics        map[string]*RequestMetrics
-	mu             sync.RWMutex
+	clients             map[string]Client
+	healthStatus        map[string]*HealthStatus
+	metrics             map[string]*RequestMetrics
+	mu                  sync.RWMutex
 	healthCheckInterval time.Duration
-	stopHealthCheck chan bool
+	stopHealthCheck     chan bool
 }
 
 func NewManager() *Manager {
 	m := &Manager{
-		clients:           make(map[string]Client),
-		healthStatus:      make(map[string]*HealthStatus),
-		metrics:          make(map[string]*RequestMetrics),
+		clients:             make(map[string]Client),
+		healthStatus:        make(map[string]*HealthStatus),
+		metrics:             make(map[string]*RequestMetrics),
 		healthCheckInterval: 30 * time.Second,
-		stopHealthCheck:   make(chan bool),
+		stopHealthCheck:     make(chan bool),
 	}
-	
+
 	// Start health check routine
 	go m.healthCheckRoutine()
-	
+
 	return m
 }
 
@@ -126,7 +126,7 @@ func (m *Manager) GetClientWithFallback(preferredName string) (Client, string, e
 func (m *Manager) RemoveClient(name string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	delete(m.clients, name)
 	delete(m.healthStatus, name)
 	delete(m.metrics, name)
@@ -160,12 +160,12 @@ func (m *Manager) GetMetrics() map[string]*RequestMetrics {
 	for name, metrics := range m.metrics {
 		// Copy the metrics to avoid external mutation
 		result[name] = &RequestMetrics{
-			Provider:           metrics.Provider,
-			TotalRequests:      metrics.TotalRequests,
-			SuccessfulRequests: metrics.SuccessfulRequests,
-			FailedRequests:     metrics.FailedRequests,
+			Provider:            metrics.Provider,
+			TotalRequests:       metrics.TotalRequests,
+			SuccessfulRequests:  metrics.SuccessfulRequests,
+			FailedRequests:      metrics.FailedRequests,
 			AverageResponseTime: metrics.AverageResponseTime,
-			LastRequestTime:    metrics.LastRequestTime,
+			LastRequestTime:     metrics.LastRequestTime,
 		}
 	}
 	return result
@@ -179,7 +179,7 @@ func (m *Manager) RecordRequest(clientName string, success bool, responseTime ti
 	if metrics, exists := m.metrics[clientName]; exists {
 		metrics.TotalRequests++
 		metrics.LastRequestTime = time.Now()
-		
+
 		if success {
 			metrics.SuccessfulRequests++
 		} else {

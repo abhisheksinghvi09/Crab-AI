@@ -2,12 +2,12 @@ package dbmanager
 
 import (
 	"context"
+	"crab-ai/internal/apis/dtos"
+	"crab-ai/internal/utils"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
-	"crab-ai/internal/apis/dtos"
-	"crab-ai/internal/utils"
 	"net/url"
 	"os"
 	"regexp"
@@ -1948,14 +1948,14 @@ func (d *MongoDBDriver) ExecuteQuery(ctx context.Context, conn *Connection, quer
 		if err := processDotNotationInAggregation(pipeline); err != nil {
 			log.Printf("MongoDBDriver -> ExecuteQuery -> Error processing dot notation in pipeline: %v", err)
 		}
-		
+
 		// Process ObjectIds and Dates in the pipeline
 		for _, stage := range pipeline {
 			if err := processObjectIds(stage); err != nil {
 				log.Printf("MongoDBDriver -> ExecuteQuery -> Error processing ObjectIds/Dates in pipeline: %v", err)
 			}
 		}
-		
+
 		// Debug: Log the final pipeline before execution
 		pipelineJSON, _ := json.Marshal(pipeline)
 		log.Printf("MongoDBDriver -> ExecuteQuery -> Final aggregation pipeline: %s", string(pipelineJSON))
@@ -2266,4 +2266,3 @@ func (d *MongoDBDriver) BeginTx(ctx context.Context, conn *Connection) Transacti
 	log.Printf("MongoDBDriver -> BeginTx -> MongoDB transaction started successfully")
 	return tx
 }
-

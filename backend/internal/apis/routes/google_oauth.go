@@ -15,7 +15,7 @@ func SetupGoogleOAuthRoutes(router *gin.Engine) {
 		// Public endpoints for OAuth flow
 		googleGroup.GET("/auth", googleHandler.InitiateGoogleAuth)
 		googleGroup.GET("/callback", googleHandler.HandleGoogleCallback)
-		
+
 		// Protected endpoints requiring authentication
 		protectedGroup := googleGroup.Group("")
 		protectedGroup.Use(middlewares.AuthMiddleware())

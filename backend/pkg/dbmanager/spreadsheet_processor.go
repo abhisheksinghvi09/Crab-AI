@@ -1,10 +1,10 @@
 package dbmanager
 
 import (
+	"crab-ai/internal/apis/dtos"
 	"database/sql"
 	"fmt"
 	"log"
-	"crab-ai/internal/apis/dtos"
 	"strings"
 )
 
@@ -39,7 +39,7 @@ func (p *SpreadsheetProcessor) ProcessAndStoreSpreadsheet(
 	regions, err := analyzer.AnalyzeRobust()
 	if err != nil {
 		log.Printf("Warning: Robust analysis failed: %v, falling back to unstructured handling", err)
-		
+
 		// Create unstructured fallback
 		region := p.createUnstructuredRegion(data)
 		regions = []*DataRegion{region}
@@ -63,7 +63,7 @@ func (p *SpreadsheetProcessor) ProcessAndStoreSpreadsheet(
 			tableName = fmt.Sprintf("%s_%d", baseTableName, idx+1)
 		}
 
-		log.Printf("SpreadsheetProcessor -> Processing region %d/%d as table '%s'", 
+		log.Printf("SpreadsheetProcessor -> Processing region %d/%d as table '%s'",
 			idx+1, len(regions), tableName)
 		log.Printf("  - Headers: %v", region.Headers)
 		log.Printf("  - Rows: %d", len(region.DataRows))
@@ -91,7 +91,7 @@ func (p *SpreadsheetProcessor) ProcessAndStoreSpreadsheet(
 		p.storeAllMetadata(chatID, allMetadata)
 	}
 
-	log.Printf("SpreadsheetProcessor -> Successfully processed %d/%d regions", 
+	log.Printf("SpreadsheetProcessor -> Successfully processed %d/%d regions",
 		successCount, len(regions))
 
 	return nil
@@ -138,7 +138,7 @@ func (p *SpreadsheetProcessor) storeRegionData(
 ) error {
 	// Sanitize table and column names
 	tableName = sanitizeTableName(tableName)
-	
+
 	// Drop existing table
 	dropQuery := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s CASCADE", schemaName, tableName)
 	if _, err := db.Exec(dropQuery); err != nil {
@@ -158,9 +158,9 @@ func (p *SpreadsheetProcessor) storeRegionData(
 	columns = append(columns, "_quality_score DECIMAL(5,2) DEFAULT 0.00")
 
 	// Create table
-	createQuery := fmt.Sprintf("CREATE TABLE %s.%s (%s)", 
+	createQuery := fmt.Sprintf("CREATE TABLE %s.%s (%s)",
 		schemaName, tableName, strings.Join(columns, ", "))
-	
+
 	if _, err := db.Exec(createQuery); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
@@ -182,7 +182,7 @@ func (p *SpreadsheetProcessor) storeRegionData(
 				end = len(region.DataRows)
 			}
 
-			if err := p.insertBatch(db, schemaName, tableName, colNames, 
+			if err := p.insertBatch(db, schemaName, tableName, colNames,
 				region.DataRows[i:end], region.Quality); err != nil {
 				log.Printf("Warning: Failed to insert batch %d-%d: %v", i, end, err)
 			}
@@ -210,10 +210,10 @@ func (p *SpreadsheetProcessor) insertBatch(
 
 	// Build values for batch insert
 	valueStrings := make([]string, 0, len(rows))
-	
+
 	for _, row := range rows {
 		values := make([]string, 0, len(columns))
-		
+
 		// Add data values
 		for i := 0; i < len(columns)-1; i++ { // -1 for quality score
 			var value string
@@ -224,10 +224,10 @@ func (p *SpreadsheetProcessor) insertBatch(
 			}
 			values = append(values, fmt.Sprintf("'%s'", value))
 		}
-		
+
 		// Add quality score
 		values = append(values, fmt.Sprintf("%.2f", quality))
-		
+
 		valueStrings = append(valueStrings, fmt.Sprintf("(%s)", strings.Join(values, ", ")))
 	}
 
@@ -251,14 +251,14 @@ func (p *SpreadsheetProcessor) createIndexes(
 	if len(headers) > 0 {
 		firstCol := sanitizeColumnName(headers[0])
 		firstColLower := strings.ToLower(headers[0])
-		
-		if strings.Contains(firstColLower, "id") || 
-		   strings.Contains(firstColLower, "key") ||
-		   strings.Contains(firstColLower, "code") {
+
+		if strings.Contains(firstColLower, "id") ||
+			strings.Contains(firstColLower, "key") ||
+			strings.Contains(firstColLower, "code") {
 			indexName := fmt.Sprintf("idx_%s_%s", tableName, firstCol)
 			indexQuery := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s.%s (%s)",
 				indexName, schemaName, tableName, firstCol)
-			
+
 			if _, err := db.Exec(indexQuery); err != nil {
 				log.Printf("Warning: Failed to create index on %s: %v", firstCol, err)
 			}
@@ -269,7 +269,7 @@ func (p *SpreadsheetProcessor) createIndexes(
 	qualityIndexName := fmt.Sprintf("idx_%s_quality", tableName)
 	qualityIndexQuery := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s.%s (_quality_score)",
 		qualityIndexName, schemaName, tableName)
-	
+
 	if _, err := db.Exec(qualityIndexQuery); err != nil {
 		log.Printf("Warning: Failed to create quality index: %v", err)
 	}
@@ -304,7 +304,7 @@ func (p *SpreadsheetProcessor) createMetadata(tableName string, region *DataRegi
 func (p *SpreadsheetProcessor) storeAllMetadata(chatID string, allMetadata []*dtos.ImportMetadata) {
 	// Implementation depends on redis interface
 	// This is a placeholder
-	log.Printf("SpreadsheetProcessor -> Would store metadata for %d tables in chat %s", 
+	log.Printf("SpreadsheetProcessor -> Would store metadata for %d tables in chat %s",
 		len(allMetadata), chatID)
 }
 

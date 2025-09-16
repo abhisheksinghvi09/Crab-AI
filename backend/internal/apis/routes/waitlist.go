@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"log"
 	"crab-ai/internal/di"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )

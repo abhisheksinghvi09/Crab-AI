@@ -21,9 +21,9 @@ type RateLimiter struct {
 }
 
 type ClientRequests struct {
-	count     int
-	window    time.Time
-	lastSeen  time.Time
+	count    int
+	window   time.Time
+	lastSeen time.Time
 }
 
 func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
@@ -104,7 +104,7 @@ func RateLimitMiddleware(limit int, window time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get client identifier (IP address, could be enhanced with user ID)
 		clientIP := c.ClientIP()
-		
+
 		if !limiter.Allow(clientIP) {
 			ThrowRateLimitError(fmt.Sprintf("Rate limit exceeded. Maximum %d requests per %v", limit, window))
 			return
@@ -161,10 +161,10 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Content-Security-Policy", "default-src 'self'")
-		
+
 		// Remove server information
 		c.Header("Server", "")
-		
+
 		c.Next()
 	}
 }
@@ -195,7 +195,7 @@ func sanitizeString(input string) string {
 		"onerror", "",
 		"onclick", "",
 	)
-	
+
 	return replacer.Replace(input)
 }
 
@@ -207,10 +207,10 @@ func RequestIDMiddleware() gin.HandlerFunc {
 			// Generate a simple request ID
 			requestID = fmt.Sprintf("%d-%s", time.Now().UnixNano(), c.ClientIP())
 		}
-		
+
 		c.Header("X-Request-ID", requestID)
 		c.Set("request_id", requestID)
-		
+
 		c.Next()
 	}
 }
@@ -219,7 +219,7 @@ func RequestIDMiddleware() gin.HandlerFunc {
 func EnhancedCORSMiddleware(allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		
+
 		// Check if origin is in allowed list
 		allowed := false
 		for _, allowedOrigin := range allowedOrigins {
@@ -228,11 +228,11 @@ func EnhancedCORSMiddleware(allowedOrigins []string) gin.HandlerFunc {
 				break
 			}
 		}
-		
+
 		if allowed {
 			c.Header("Access-Control-Allow-Origin", origin)
 		}
-		
+
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, User-Agent, X-Request-ID")
 		c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Type, Authorization, X-Request-ID")

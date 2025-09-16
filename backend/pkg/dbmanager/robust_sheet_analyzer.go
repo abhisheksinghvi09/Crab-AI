@@ -20,25 +20,25 @@ type RobustSheetAnalyzer struct {
 
 // AnalyzerConfig contains configuration for the analyzer
 type AnalyzerConfig struct {
-	MinDataDensity      float64 // Minimum density to consider area as data (0-1)
-	MaxEmptyRowsAllowed int     // Max consecutive empty rows before splitting
-	MaxEmptyColsAllowed int     // Max consecutive empty cols before splitting
-	AutoDetectHeaders   bool    // Automatically detect headers
-	HandleMergedCells   bool    // Handle merged cells
-	DetectMultipleTables bool   // Detect multiple tables in one sheet
+	MinDataDensity       float64 // Minimum density to consider area as data (0-1)
+	MaxEmptyRowsAllowed  int     // Max consecutive empty rows before splitting
+	MaxEmptyColsAllowed  int     // Max consecutive empty cols before splitting
+	AutoDetectHeaders    bool    // Automatically detect headers
+	HandleMergedCells    bool    // Handle merged cells
+	DetectMultipleTables bool    // Detect multiple tables in one sheet
 }
 
 // DataArea represents a detected data area in the sheet
 type DataArea struct {
-	StartRow     int
-	EndRow       int
-	StartCol     int
-	EndCol       int
-	Headers      []string
-	DataRows     [][]interface{}
-	AreaType     string // "structured", "unstructured", "pivot", "matrix"
-	Confidence   float64
-	TableName    string
+	StartRow   int
+	EndRow     int
+	StartCol   int
+	EndCol     int
+	Headers    []string
+	DataRows   [][]interface{}
+	AreaType   string // "structured", "unstructured", "pivot", "matrix"
+	Confidence float64
+	TableName  string
 }
 
 // NewRobustSheetAnalyzer creates a new robust analyzer with default config
@@ -46,7 +46,7 @@ func NewRobustSheetAnalyzer(data [][]interface{}) *RobustSheetAnalyzer {
 	return &RobustSheetAnalyzer{
 		data: data,
 		config: AnalyzerConfig{
-			MinDataDensity:       0.1,  // At least 10% cells should have data
+			MinDataDensity:       0.1, // At least 10% cells should have data
 			MaxEmptyRowsAllowed:  3,
 			MaxEmptyColsAllowed:  3,
 			AutoDetectHeaders:    true,
@@ -66,20 +66,20 @@ func (rsa *RobustSheetAnalyzer) AnalyzeRobust() ([]*DataRegion, error) {
 
 	// Step 1: Detect all data areas (could be multiple tables)
 	areas := rsa.detectDataAreas()
-	
+
 	// Step 2: Analyze each area independently
 	regions := make([]*DataRegion, 0)
-	
+
 	for i, area := range areas {
-		log.Printf("RobustSheetAnalyzer -> Analyzing area %d: rows %d-%d, cols %d-%d", 
+		log.Printf("RobustSheetAnalyzer -> Analyzing area %d: rows %d-%d, cols %d-%d",
 			i+1, area.StartRow, area.EndRow, area.StartCol, area.EndCol)
-		
+
 		region := rsa.analyzeDataArea(area)
 		if region != nil {
 			regions = append(regions, region)
 		}
 	}
-	
+
 	// Step 3: If no structured data found, treat entire sheet as unstructured
 	if len(regions) == 0 {
 		log.Printf("RobustSheetAnalyzer -> No structured data found, treating as unstructured")
@@ -88,7 +88,7 @@ func (rsa *RobustSheetAnalyzer) AnalyzeRobust() ([]*DataRegion, error) {
 			regions = append(regions, region)
 		}
 	}
-	
+
 	return regions, nil
 }
 
@@ -96,14 +96,14 @@ func (rsa *RobustSheetAnalyzer) AnalyzeRobust() ([]*DataRegion, error) {
 func (rsa *RobustSheetAnalyzer) detectDataAreas() []DataArea {
 	areas := make([]DataArea, 0)
 	visited := make(map[string]bool)
-	
+
 	for rowIdx := 0; rowIdx < len(rsa.data); rowIdx++ {
 		for colIdx := 0; colIdx < rsa.getMaxCols(); colIdx++ {
 			key := fmt.Sprintf("%d-%d", rowIdx, colIdx)
 			if visited[key] {
 				continue
 			}
-			
+
 			if rsa.hasDataAt(rowIdx, colIdx) {
 				// Found data, expand to find the full area
 				area := rsa.expandDataArea(rowIdx, colIdx, visited)
@@ -113,10 +113,10 @@ func (rsa *RobustSheetAnalyzer) detectDataAreas() []DataArea {
 			}
 		}
 	}
-	
+
 	// Merge overlapping areas
 	areas = rsa.mergeOverlappingAreas(areas)
-	
+
 	return areas
 }
 
@@ -128,22 +128,22 @@ func (rsa *RobustSheetAnalyzer) expandDataArea(startRow, startCol int, visited m
 		StartCol: startCol,
 		EndCol:   startCol,
 	}
-	
+
 	// Use flood-fill algorithm to find connected data
 	queue := [][]int{{startRow, startCol}}
-	
+
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
-		
+
 		row, col := current[0], current[1]
 		key := fmt.Sprintf("%d-%d", row, col)
-		
+
 		if visited[key] {
 			continue
 		}
 		visited[key] = true
-		
+
 		// Update area bounds
 		if row < area.StartRow {
 			area.StartRow = row
@@ -157,7 +157,7 @@ func (rsa *RobustSheetAnalyzer) expandDataArea(startRow, startCol int, visited m
 		if col > area.EndCol {
 			area.EndCol = col
 		}
-		
+
 		// Check adjacent cells (with tolerance for empty cells)
 		directions := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 		for _, dir := range directions {
@@ -167,7 +167,7 @@ func (rsa *RobustSheetAnalyzer) expandDataArea(startRow, startCol int, visited m
 			}
 		}
 	}
-	
+
 	return area
 }
 
@@ -176,11 +176,11 @@ func (rsa *RobustSheetAnalyzer) shouldIncludeInArea(row, col int, currentArea Da
 	if row < 0 || row >= len(rsa.data) || col < 0 || col >= rsa.getMaxCols() {
 		return false
 	}
-	
+
 	// Allow some empty cells within the area
 	emptyRowGap := 0
 	emptyColGap := 0
-	
+
 	// Check row gap
 	if row < currentArea.StartRow {
 		for r := row + 1; r < currentArea.StartRow; r++ {
@@ -197,7 +197,7 @@ func (rsa *RobustSheetAnalyzer) shouldIncludeInArea(row, col int, currentArea Da
 			emptyRowGap++
 		}
 	}
-	
+
 	// Check column gap
 	if col < currentArea.StartCol {
 		for c := col + 1; c < currentArea.StartCol; c++ {
@@ -214,11 +214,11 @@ func (rsa *RobustSheetAnalyzer) shouldIncludeInArea(row, col int, currentArea Da
 			emptyColGap++
 		}
 	}
-	
+
 	// Include if gaps are within tolerance
-	return emptyRowGap <= rsa.config.MaxEmptyRowsAllowed && 
-	       emptyColGap <= rsa.config.MaxEmptyColsAllowed &&
-	       rsa.hasDataAt(row, col)
+	return emptyRowGap <= rsa.config.MaxEmptyRowsAllowed &&
+		emptyColGap <= rsa.config.MaxEmptyColsAllowed &&
+		rsa.hasDataAt(row, col)
 }
 
 // analyzeDataArea analyzes a specific data area
@@ -228,12 +228,12 @@ func (rsa *RobustSheetAnalyzer) analyzeDataArea(area DataArea) *DataRegion {
 	if len(areaData) == 0 {
 		return nil
 	}
-	
+
 	// Determine area type
 	areaType := rsa.determineAreaType(areaData)
-	
+
 	var region *DataRegion
-	
+
 	switch areaType {
 	case "structured":
 		region = rsa.handleStructuredData(areaData, area)
@@ -244,14 +244,14 @@ func (rsa *RobustSheetAnalyzer) analyzeDataArea(area DataArea) *DataRegion {
 	default:
 		region = rsa.handleSemiStructuredData(areaData, area)
 	}
-	
+
 	if region != nil {
 		region.StartRow = area.StartRow
 		region.EndRow = area.EndRow
 		region.StartCol = area.StartCol
 		region.EndCol = area.EndCol
 	}
-	
+
 	return region
 }
 
@@ -259,7 +259,7 @@ func (rsa *RobustSheetAnalyzer) analyzeDataArea(area DataArea) *DataRegion {
 func (rsa *RobustSheetAnalyzer) handleStructuredData(data [][]interface{}, area DataArea) *DataRegion {
 	// Find headers using multiple strategies
 	headers, headerRow := rsa.findBestHeaders(data)
-	
+
 	// Extract data rows
 	dataRows := make([][]interface{}, 0)
 	if headerRow >= 0 && headerRow < len(data)-1 {
@@ -269,20 +269,20 @@ func (rsa *RobustSheetAnalyzer) handleStructuredData(data [][]interface{}, area 
 		headers = rsa.generateHeaders(len(data[0]))
 		dataRows = data
 	}
-	
+
 	// Ensure all rows have same length as headers
 	normalizedRows := rsa.normalizeRows(dataRows, len(headers))
-	
+
 	region := &DataRegion{
 		Headers:  headers,
 		DataRows: normalizedRows,
 		Quality:  rsa.calculateDataQuality(normalizedRows, headers),
 	}
-	
+
 	// Add analysis
 	region.Issues = rsa.detectDataIssues(region)
 	region.Suggestions = rsa.generateSuggestions(region)
-	
+
 	return region
 }
 
@@ -290,17 +290,17 @@ func (rsa *RobustSheetAnalyzer) handleStructuredData(data [][]interface{}, area 
 func (rsa *RobustSheetAnalyzer) handlePivotTable(data [][]interface{}, area DataArea) *DataRegion {
 	// Pivot tables have row headers and column headers
 	// Convert to regular table format
-	
+
 	if len(data) < 2 || len(data[0]) < 2 {
 		return rsa.handleSemiStructuredData(data, area)
 	}
-	
+
 	// First row contains column headers (except first cell)
 	colHeaders := make([]string, 0)
 	for i := 1; i < len(data[0]); i++ {
 		colHeaders = append(colHeaders, rsa.cellToString(data[0][i], i))
 	}
-	
+
 	// First column contains row headers
 	rowHeaders := make([]string, 0)
 	for i := 1; i < len(data); i++ {
@@ -308,11 +308,11 @@ func (rsa *RobustSheetAnalyzer) handlePivotTable(data [][]interface{}, area Data
 			rowHeaders = append(rowHeaders, rsa.cellToString(data[i][0], 0))
 		}
 	}
-	
+
 	// Create flattened structure
 	headers := []string{"row_label"}
 	headers = append(headers, colHeaders...)
-	
+
 	dataRows := make([][]interface{}, 0)
 	for i := 1; i < len(data); i++ {
 		if len(data[i]) > 0 {
@@ -323,7 +323,7 @@ func (rsa *RobustSheetAnalyzer) handlePivotTable(data [][]interface{}, area Data
 			dataRows = append(dataRows, row)
 		}
 	}
-	
+
 	return &DataRegion{
 		Headers:     headers,
 		DataRows:    dataRows,
@@ -337,22 +337,22 @@ func (rsa *RobustSheetAnalyzer) handlePivotTable(data [][]interface{}, area Data
 func (rsa *RobustSheetAnalyzer) handleMatrixData(data [][]interface{}, area DataArea) *DataRegion {
 	// Matrix data doesn't have clear headers
 	// Generate column names based on position
-	
+
 	maxCols := 0
 	for _, row := range data {
 		if len(row) > maxCols {
 			maxCols = len(row)
 		}
 	}
-	
+
 	headers := make([]string, maxCols)
 	for i := 0; i < maxCols; i++ {
 		headers[i] = fmt.Sprintf("col_%d", i+1)
 	}
-	
+
 	// Normalize all rows
 	normalizedRows := rsa.normalizeRows(data, maxCols)
-	
+
 	return &DataRegion{
 		Headers:     headers,
 		DataRows:    normalizedRows,
@@ -366,10 +366,10 @@ func (rsa *RobustSheetAnalyzer) handleMatrixData(data [][]interface{}, area Data
 func (rsa *RobustSheetAnalyzer) handleSemiStructuredData(data [][]interface{}, area DataArea) *DataRegion {
 	// Try to find any pattern in the data
 	patterns := rsa.detectDataPatterns(data)
-	
+
 	var headers []string
 	var dataRows [][]interface{}
-	
+
 	if patterns["key_value"] {
 		// Handle key-value pairs
 		headers = []string{"key", "value"}
@@ -382,7 +382,7 @@ func (rsa *RobustSheetAnalyzer) handleSemiStructuredData(data [][]interface{}, a
 		// Fall back to treating each unique position as a column
 		headers, dataRows = rsa.extractPositionalData(data)
 	}
-	
+
 	return &DataRegion{
 		Headers:     headers,
 		DataRows:    dataRows,
@@ -397,7 +397,7 @@ func (rsa *RobustSheetAnalyzer) handleUnstructuredData() *DataRegion {
 	// Find all non-empty cells and create a simple structure
 	headers := []string{"row_num", "col_num", "value"}
 	dataRows := make([][]interface{}, 0)
-	
+
 	for rowIdx, row := range rsa.data {
 		for colIdx, cell := range row {
 			if cell != nil && fmt.Sprintf("%v", cell) != "" {
@@ -409,12 +409,12 @@ func (rsa *RobustSheetAnalyzer) handleUnstructuredData() *DataRegion {
 			}
 		}
 	}
-	
+
 	if len(dataRows) == 0 {
 		// Create at least one row to avoid empty table
 		dataRows = append(dataRows, []interface{}{1, "A", "No data found"})
 	}
-	
+
 	return &DataRegion{
 		Headers:     headers,
 		DataRows:    dataRows,
@@ -429,18 +429,18 @@ func (rsa *RobustSheetAnalyzer) findBestHeaders(data [][]interface{}) ([]string,
 	if len(data) == 0 {
 		return []string{}, -1
 	}
-	
+
 	strategies := []func([][]interface{}) ([]string, int, float64){
 		rsa.strategyFirstNonEmpty,
 		rsa.strategyMostText,
 		rsa.strategyUniqueValues,
 		rsa.strategyPatternMatch,
 	}
-	
+
 	bestHeaders := []string{}
 	bestRow := -1
 	bestScore := 0.0
-	
+
 	for _, strategy := range strategies {
 		headers, row, score := strategy(data)
 		if score > bestScore {
@@ -449,7 +449,7 @@ func (rsa *RobustSheetAnalyzer) findBestHeaders(data [][]interface{}) ([]string,
 			bestScore = score
 		}
 	}
-	
+
 	// If no good headers found, use first row or generate
 	if bestScore < 0.3 {
 		if len(data) > 0 && rsa.rowHasData(data[0]) {
@@ -460,7 +460,7 @@ func (rsa *RobustSheetAnalyzer) findBestHeaders(data [][]interface{}) ([]string,
 			bestRow = -1
 		}
 	}
-	
+
 	return bestHeaders, bestRow
 }
 
@@ -480,16 +480,16 @@ func (rsa *RobustSheetAnalyzer) strategyMostText(data [][]interface{}) ([]string
 	if len(data) == 0 {
 		return []string{}, -1, 0.0
 	}
-	
+
 	maxTextRow := 0
 	maxTextCount := 0
-	
+
 	// Check first 5 rows
 	limit := 5
 	if len(data) < limit {
 		limit = len(data)
 	}
-	
+
 	for i := 0; i < limit; i++ {
 		textCount := 0
 		for _, cell := range data[i] {
@@ -502,13 +502,13 @@ func (rsa *RobustSheetAnalyzer) strategyMostText(data [][]interface{}) ([]string
 			maxTextRow = i
 		}
 	}
-	
+
 	if maxTextCount > 0 {
 		headers := rsa.rowToHeaders(data[maxTextRow])
 		score := rsa.scoreAsHeaders(headers, data, maxTextRow)
 		return headers, maxTextRow, score
 	}
-	
+
 	return []string{}, -1, 0.0
 }
 
@@ -516,16 +516,16 @@ func (rsa *RobustSheetAnalyzer) strategyUniqueValues(data [][]interface{}) ([]st
 	if len(data) < 2 {
 		return []string{}, -1, 0.0
 	}
-	
+
 	// Check first few rows for uniqueness
 	limit := 3
 	if len(data) < limit {
 		limit = len(data)
 	}
-	
+
 	bestRow := 0
 	bestUniqueness := 0.0
-	
+
 	for i := 0; i < limit; i++ {
 		uniqueness := rsa.calculateUniqueness(data[i])
 		if uniqueness > bestUniqueness {
@@ -533,13 +533,13 @@ func (rsa *RobustSheetAnalyzer) strategyUniqueValues(data [][]interface{}) ([]st
 			bestRow = i
 		}
 	}
-	
+
 	if bestUniqueness > 0.5 {
 		headers := rsa.rowToHeaders(data[bestRow])
 		score := rsa.scoreAsHeaders(headers, data, bestRow)
 		return headers, bestRow, score
 	}
-	
+
 	return []string{}, -1, 0.0
 }
 
@@ -549,19 +549,19 @@ func (rsa *RobustSheetAnalyzer) strategyPatternMatch(data [][]interface{}) ([]st
 		"quantity", "status", "type", "category", "description", "address",
 		"city", "state", "country", "code", "number", "value", "total",
 	}
-	
+
 	bestRow := -1
 	bestScore := 0.0
-	
+
 	limit := 5
 	if len(data) < limit {
 		limit = len(data)
 	}
-	
+
 	for i := 0; i < limit; i++ {
 		score := 0.0
 		count := 0
-		
+
 		for _, cell := range data[i] {
 			cellStr := strings.ToLower(rsa.cellToString(cell, 0))
 			for _, pattern := range commonHeaders {
@@ -572,7 +572,7 @@ func (rsa *RobustSheetAnalyzer) strategyPatternMatch(data [][]interface{}) ([]st
 			}
 			count++
 		}
-		
+
 		if count > 0 {
 			normalizedScore := score / float64(count)
 			if normalizedScore > bestScore {
@@ -581,12 +581,12 @@ func (rsa *RobustSheetAnalyzer) strategyPatternMatch(data [][]interface{}) ([]st
 			}
 		}
 	}
-	
+
 	if bestRow >= 0 && bestScore > 0.2 {
 		headers := rsa.rowToHeaders(data[bestRow])
 		return headers, bestRow, bestScore
 	}
-	
+
 	return []string{}, -1, 0.0
 }
 
@@ -644,7 +644,7 @@ func (rsa *RobustSheetAnalyzer) isValidDataArea(area DataArea) bool {
 	// Calculate density
 	totalCells := (area.EndRow - area.StartRow + 1) * (area.EndCol - area.StartCol + 1)
 	filledCells := 0
-	
+
 	for row := area.StartRow; row <= area.EndRow && row < len(rsa.data); row++ {
 		for col := area.StartCol; col <= area.EndCol && col < len(rsa.data[row]); col++ {
 			if rsa.hasDataAt(row, col) {
@@ -652,11 +652,11 @@ func (rsa *RobustSheetAnalyzer) isValidDataArea(area DataArea) bool {
 			}
 		}
 	}
-	
+
 	if totalCells == 0 {
 		return false
 	}
-	
+
 	density := float64(filledCells) / float64(totalCells)
 	return density >= rsa.config.MinDataDensity && filledCells > 0
 }
@@ -665,32 +665,32 @@ func (rsa *RobustSheetAnalyzer) mergeOverlappingAreas(areas []DataArea) []DataAr
 	if len(areas) <= 1 {
 		return areas
 	}
-	
+
 	merged := make([]DataArea, 0)
 	used := make(map[int]bool)
-	
+
 	for i := 0; i < len(areas); i++ {
 		if used[i] {
 			continue
 		}
-		
+
 		current := areas[i]
-		
+
 		for j := i + 1; j < len(areas); j++ {
 			if used[j] {
 				continue
 			}
-			
+
 			if rsa.areasOverlap(current, areas[j]) {
 				// Merge areas
 				current = rsa.mergeAreas(current, areas[j])
 				used[j] = true
 			}
 		}
-		
+
 		merged = append(merged, current)
 	}
-	
+
 	return merged
 }
 
@@ -710,7 +710,7 @@ func (rsa *RobustSheetAnalyzer) mergeAreas(a1, a2 DataArea) DataArea {
 
 func (rsa *RobustSheetAnalyzer) extractAreaData(area DataArea) [][]interface{} {
 	data := make([][]interface{}, 0)
-	
+
 	for row := area.StartRow; row <= area.EndRow && row < len(rsa.data); row++ {
 		rowData := make([]interface{}, 0)
 		for col := area.StartCol; col <= area.EndCol; col++ {
@@ -722,7 +722,7 @@ func (rsa *RobustSheetAnalyzer) extractAreaData(area DataArea) [][]interface{} {
 		}
 		data = append(data, rowData)
 	}
-	
+
 	return data
 }
 
@@ -730,22 +730,22 @@ func (rsa *RobustSheetAnalyzer) determineAreaType(data [][]interface{}) string {
 	if len(data) == 0 {
 		return "empty"
 	}
-	
+
 	// Check for pivot table characteristics
 	if rsa.looksLikePivot(data) {
 		return "pivot"
 	}
-	
+
 	// Check for structured table
 	if rsa.looksLikeStructured(data) {
 		return "structured"
 	}
-	
+
 	// Check for matrix
 	if rsa.looksLikeMatrix(data) {
 		return "matrix"
 	}
-	
+
 	return "unstructured"
 }
 
@@ -753,28 +753,28 @@ func (rsa *RobustSheetAnalyzer) looksLikePivot(data [][]interface{}) bool {
 	if len(data) < 2 || len(data[0]) < 2 {
 		return false
 	}
-	
+
 	// Pivot tables often have empty top-left cell
 	topLeftEmpty := data[0][0] == nil || fmt.Sprintf("%v", data[0][0]) == ""
-	
+
 	// Has headers in both first row and first column
 	hasRowHeaders := true
 	hasColHeaders := true
-	
+
 	for i := 1; i < len(data) && i < 5; i++ {
 		if len(data[i]) > 0 && !rsa.isTextCell(data[i][0]) {
 			hasRowHeaders = false
 			break
 		}
 	}
-	
+
 	for j := 1; j < len(data[0]) && j < 5; j++ {
 		if !rsa.isTextCell(data[0][j]) {
 			hasColHeaders = false
 			break
 		}
 	}
-	
+
 	return topLeftEmpty && hasRowHeaders && hasColHeaders
 }
 
@@ -782,17 +782,17 @@ func (rsa *RobustSheetAnalyzer) looksLikeStructured(data [][]interface{}) bool {
 	if len(data) < 2 {
 		return false
 	}
-	
+
 	// Check if rows have consistent column count
 	firstRowLen := len(data[0])
 	consistentCount := 0
-	
+
 	for _, row := range data {
 		if len(row) == firstRowLen {
 			consistentCount++
 		}
 	}
-	
+
 	consistency := float64(consistentCount) / float64(len(data))
 	return consistency > 0.7
 }
@@ -801,11 +801,11 @@ func (rsa *RobustSheetAnalyzer) looksLikeMatrix(data [][]interface{}) bool {
 	if len(data) < 2 {
 		return false
 	}
-	
+
 	// Matrix data is mostly numeric
 	numericCount := 0
 	totalCount := 0
-	
+
 	for _, row := range data {
 		for _, cell := range row {
 			if cell != nil && fmt.Sprintf("%v", cell) != "" {
@@ -816,11 +816,11 @@ func (rsa *RobustSheetAnalyzer) looksLikeMatrix(data [][]interface{}) bool {
 			}
 		}
 	}
-	
+
 	if totalCount == 0 {
 		return false
 	}
-	
+
 	numericRatio := float64(numericCount) / float64(totalCount)
 	return numericRatio > 0.8
 }
@@ -837,20 +837,20 @@ func (rsa *RobustSheetAnalyzer) rowHasData(row []interface{}) bool {
 func (rsa *RobustSheetAnalyzer) rowToHeaders(row []interface{}) []string {
 	headers := make([]string, 0)
 	headerCounts := make(map[string]int)
-	
+
 	for i, cell := range row {
 		header := rsa.cellToString(cell, i)
-		
+
 		// Handle duplicates
 		baseHeader := header
 		if count, exists := headerCounts[strings.ToLower(header)]; exists {
 			header = fmt.Sprintf("%s_%d", baseHeader, count+1)
 		}
 		headerCounts[strings.ToLower(baseHeader)]++
-		
+
 		headers = append(headers, header)
 	}
-	
+
 	return headers
 }
 
@@ -858,20 +858,20 @@ func (rsa *RobustSheetAnalyzer) cellToString(cell interface{}, colIndex int) str
 	if cell == nil {
 		return fmt.Sprintf("column_%d", colIndex+1)
 	}
-	
+
 	str := fmt.Sprintf("%v", cell)
 	str = strings.TrimSpace(str)
-	
+
 	if str == "" || str == "<nil>" {
 		return fmt.Sprintf("column_%d", colIndex+1)
 	}
-	
+
 	// Clean the string for use as header
 	cleaned := rsa.cleanHeaderString(str)
 	if cleaned == "" {
 		return fmt.Sprintf("column_%d", colIndex+1)
 	}
-	
+
 	return cleaned
 }
 
@@ -879,27 +879,27 @@ func (rsa *RobustSheetAnalyzer) cleanHeaderString(s string) string {
 	// Remove special characters but keep underscores and spaces
 	re := regexp.MustCompile(`[^a-zA-Z0-9_\s]+`)
 	cleaned := re.ReplaceAllString(s, "_")
-	
+
 	// Replace multiple spaces/underscores with single underscore
 	re = regexp.MustCompile(`[\s_]+`)
 	cleaned = re.ReplaceAllString(cleaned, "_")
-	
+
 	// Trim underscores
 	cleaned = strings.Trim(cleaned, "_")
-	
+
 	// Convert to lowercase
 	cleaned = strings.ToLower(cleaned)
-	
+
 	// Ensure it starts with a letter
 	if len(cleaned) > 0 && !unicode.IsLetter(rune(cleaned[0])) {
 		cleaned = "col_" + cleaned
 	}
-	
+
 	// Limit length
 	if len(cleaned) > 50 {
 		cleaned = cleaned[:50]
 	}
-	
+
 	return cleaned
 }
 
@@ -913,7 +913,7 @@ func (rsa *RobustSheetAnalyzer) generateHeaders(count int) []string {
 
 func (rsa *RobustSheetAnalyzer) normalizeRows(rows [][]interface{}, targetLength int) [][]interface{} {
 	normalized := make([][]interface{}, 0)
-	
+
 	for _, row := range rows {
 		newRow := make([]interface{}, targetLength)
 		for i := 0; i < targetLength; i++ {
@@ -925,20 +925,20 @@ func (rsa *RobustSheetAnalyzer) normalizeRows(rows [][]interface{}, targetLength
 		}
 		normalized = append(normalized, newRow)
 	}
-	
+
 	return normalized
 }
 
 func (rsa *RobustSheetAnalyzer) scoreAsHeaders(headers []string, data [][]interface{}, headerRow int) float64 {
 	score := 0.0
-	
+
 	// Check for meaningful header names
 	for _, header := range headers {
 		if !strings.HasPrefix(header, "column_") {
 			score += 0.2
 		}
 	}
-	
+
 	// Check uniqueness
 	unique := make(map[string]bool)
 	for _, header := range headers {
@@ -946,7 +946,7 @@ func (rsa *RobustSheetAnalyzer) scoreAsHeaders(headers []string, data [][]interf
 	}
 	uniqueRatio := float64(len(unique)) / float64(len(headers))
 	score += uniqueRatio * 0.3
-	
+
 	// Check if following rows have different types
 	if headerRow < len(data)-1 {
 		differentTypes := 0
@@ -961,7 +961,7 @@ func (rsa *RobustSheetAnalyzer) scoreAsHeaders(headers []string, data [][]interf
 			score += (float64(differentTypes) / float64(len(headers))) * 0.5
 		}
 	}
-	
+
 	return score
 }
 
@@ -969,14 +969,14 @@ func (rsa *RobustSheetAnalyzer) isTextCell(cell interface{}) bool {
 	if cell == nil {
 		return false
 	}
-	
+
 	str := fmt.Sprintf("%v", cell)
-	
+
 	// Try to parse as number
 	if _, err := strconv.ParseFloat(str, 64); err == nil {
 		return false
 	}
-	
+
 	// Try to parse as date
 	dateFormats := []string{
 		"2006-01-02",
@@ -984,19 +984,19 @@ func (rsa *RobustSheetAnalyzer) isTextCell(cell interface{}) bool {
 		"02-01-2006",
 		"2006-01-02 15:04:05",
 	}
-	
+
 	for _, format := range dateFormats {
 		if _, err := time.Parse(format, str); err == nil {
 			return false
 		}
 	}
-	
+
 	// Check for boolean
 	lower := strings.ToLower(str)
 	if lower == "true" || lower == "false" || lower == "yes" || lower == "no" {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -1004,7 +1004,7 @@ func (rsa *RobustSheetAnalyzer) isNumericCell(cell interface{}) bool {
 	if cell == nil {
 		return false
 	}
-	
+
 	str := fmt.Sprintf("%v", cell)
 	_, err := strconv.ParseFloat(str, 64)
 	return err == nil
@@ -1014,37 +1014,37 @@ func (rsa *RobustSheetAnalyzer) calculateUniqueness(row []interface{}) float64 {
 	if len(row) == 0 {
 		return 0.0
 	}
-	
+
 	unique := make(map[string]bool)
 	nonEmpty := 0
-	
+
 	for _, cell := range row {
 		if cell != nil && fmt.Sprintf("%v", cell) != "" {
 			unique[fmt.Sprintf("%v", cell)] = true
 			nonEmpty++
 		}
 	}
-	
+
 	if nonEmpty == 0 {
 		return 0.0
 	}
-	
+
 	return float64(len(unique)) / float64(nonEmpty)
 }
 
 func (rsa *RobustSheetAnalyzer) detectDataPatterns(data [][]interface{}) map[string]bool {
 	patterns := make(map[string]bool)
-	
+
 	// Check for key-value pattern
 	if rsa.isKeyValuePattern(data) {
 		patterns["key_value"] = true
 	}
-	
+
 	// Check for list pattern
 	if rsa.isListPattern(data) {
 		patterns["list"] = true
 	}
-	
+
 	return patterns
 }
 
@@ -1052,7 +1052,7 @@ func (rsa *RobustSheetAnalyzer) isKeyValuePattern(data [][]interface{}) bool {
 	if len(data) == 0 {
 		return false
 	}
-	
+
 	// Key-value pairs typically have 2 columns
 	twoColCount := 0
 	for _, row := range data {
@@ -1060,7 +1060,7 @@ func (rsa *RobustSheetAnalyzer) isKeyValuePattern(data [][]interface{}) bool {
 			twoColCount++
 		}
 	}
-	
+
 	return float64(twoColCount)/float64(len(data)) > 0.7
 }
 
@@ -1068,7 +1068,7 @@ func (rsa *RobustSheetAnalyzer) isListPattern(data [][]interface{}) bool {
 	if len(data) == 0 {
 		return false
 	}
-	
+
 	// List pattern typically has 1 column
 	oneColCount := 0
 	for _, row := range data {
@@ -1082,13 +1082,13 @@ func (rsa *RobustSheetAnalyzer) isListPattern(data [][]interface{}) bool {
 			oneColCount++
 		}
 	}
-	
+
 	return float64(oneColCount)/float64(len(data)) > 0.7
 }
 
 func (rsa *RobustSheetAnalyzer) extractKeyValuePairs(data [][]interface{}) [][]interface{} {
 	pairs := make([][]interface{}, 0)
-	
+
 	for _, row := range data {
 		if len(row) >= 2 {
 			key := row[0]
@@ -1098,13 +1098,13 @@ func (rsa *RobustSheetAnalyzer) extractKeyValuePairs(data [][]interface{}) [][]i
 			}
 		}
 	}
-	
+
 	return pairs
 }
 
 func (rsa *RobustSheetAnalyzer) extractListItems(data [][]interface{}) [][]interface{} {
 	items := make([][]interface{}, 0)
-	
+
 	for _, row := range data {
 		for _, cell := range row {
 			if cell != nil && fmt.Sprintf("%v", cell) != "" {
@@ -1113,7 +1113,7 @@ func (rsa *RobustSheetAnalyzer) extractListItems(data [][]interface{}) [][]inter
 			}
 		}
 	}
-	
+
 	return items
 }
 
@@ -1125,16 +1125,16 @@ func (rsa *RobustSheetAnalyzer) extractPositionalData(data [][]interface{}) ([]s
 			maxCols = len(row)
 		}
 	}
-	
+
 	// Generate headers
 	headers := make([]string, maxCols)
 	for i := 0; i < maxCols; i++ {
 		headers[i] = fmt.Sprintf("field_%d", i+1)
 	}
-	
+
 	// Normalize rows
 	rows := rsa.normalizeRows(data, maxCols)
-	
+
 	return headers, rows
 }
 
@@ -1142,13 +1142,13 @@ func (rsa *RobustSheetAnalyzer) calculateDataQuality(rows [][]interface{}, heade
 	if len(rows) == 0 || len(headers) == 0 {
 		return 0.0
 	}
-	
+
 	quality := 100.0
-	
+
 	// Check for empty cells
 	totalCells := len(rows) * len(headers)
 	emptyCells := 0
-	
+
 	for _, row := range rows {
 		for _, cell := range row {
 			if cell == nil || fmt.Sprintf("%v", cell) == "" {
@@ -1156,12 +1156,12 @@ func (rsa *RobustSheetAnalyzer) calculateDataQuality(rows [][]interface{}, heade
 			}
 		}
 	}
-	
+
 	if totalCells > 0 {
 		emptyRatio := float64(emptyCells) / float64(totalCells)
 		quality -= emptyRatio * 30
 	}
-	
+
 	// Check for consistent data types per column
 	for colIdx := range headers {
 		types := make(map[string]int)
@@ -1171,13 +1171,13 @@ func (rsa *RobustSheetAnalyzer) calculateDataQuality(rows [][]interface{}, heade
 				types[cellType]++
 			}
 		}
-		
+
 		// Penalize mixed types
 		if len(types) > 1 {
 			quality -= 5
 		}
 	}
-	
+
 	// Check for duplicate rows
 	rowSet := make(map[string]bool)
 	duplicates := 0
@@ -1188,12 +1188,12 @@ func (rsa *RobustSheetAnalyzer) calculateDataQuality(rows [][]interface{}, heade
 		}
 		rowSet[rowStr] = true
 	}
-	
+
 	if len(rows) > 0 {
 		dupRatio := float64(duplicates) / float64(len(rows))
 		quality -= dupRatio * 20
 	}
-	
+
 	return math.Max(0, math.Min(100, quality))
 }
 
@@ -1201,28 +1201,28 @@ func (rsa *RobustSheetAnalyzer) getCellType(cell interface{}) string {
 	if cell == nil {
 		return "null"
 	}
-	
+
 	str := fmt.Sprintf("%v", cell)
-	
+
 	if _, err := strconv.ParseFloat(str, 64); err == nil {
 		return "number"
 	}
-	
+
 	if _, err := time.Parse("2006-01-02", str); err == nil {
 		return "date"
 	}
-	
+
 	lower := strings.ToLower(str)
 	if lower == "true" || lower == "false" {
 		return "boolean"
 	}
-	
+
 	return "text"
 }
 
 func (rsa *RobustSheetAnalyzer) detectDataIssues(region *DataRegion) []string {
 	issues := make([]string, 0)
-	
+
 	// Check for empty columns
 	for i, header := range region.Headers {
 		isEmpty := true
@@ -1236,27 +1236,27 @@ func (rsa *RobustSheetAnalyzer) detectDataIssues(region *DataRegion) []string {
 			issues = append(issues, fmt.Sprintf("Column '%s' is empty", header))
 		}
 	}
-	
+
 	// Check for formula errors
 	for _, row := range region.DataRows {
 		for _, cell := range row {
 			cellStr := fmt.Sprintf("%v", cell)
-			if strings.HasPrefix(cellStr, "#") && 
-			   (strings.Contains(cellStr, "ERROR") || 
-			    strings.Contains(cellStr, "REF") || 
-			    strings.Contains(cellStr, "DIV")) {
+			if strings.HasPrefix(cellStr, "#") &&
+				(strings.Contains(cellStr, "ERROR") ||
+					strings.Contains(cellStr, "REF") ||
+					strings.Contains(cellStr, "DIV")) {
 				issues = append(issues, "Sheet contains formula errors")
 				break
 			}
 		}
 	}
-	
+
 	return issues
 }
 
 func (rsa *RobustSheetAnalyzer) generateSuggestions(region *DataRegion) []string {
 	suggestions := make([]string, 0)
-	
+
 	// Check for generic column names
 	genericCount := 0
 	for _, header := range region.Headers {
@@ -1264,21 +1264,21 @@ func (rsa *RobustSheetAnalyzer) generateSuggestions(region *DataRegion) []string
 			genericCount++
 		}
 	}
-	
+
 	if genericCount > len(region.Headers)/2 {
 		suggestions = append(suggestions, "Add meaningful column names for better data understanding")
 	}
-	
+
 	// Check for wide tables
 	if len(region.Headers) > 20 {
 		suggestions = append(suggestions, "Consider normalizing the data structure")
 	}
-	
+
 	// Check for low data quality
 	if region.Quality < 60 {
 		suggestions = append(suggestions, "Data quality is low - consider cleaning and structuring the data")
 	}
-	
+
 	return suggestions
 }
 

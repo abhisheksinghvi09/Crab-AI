@@ -1,10 +1,10 @@
 package services
 
 import (
+	"crab-ai/config"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"crab-ai/config"
 	"net/smtp"
 	"os"
 	"path/filepath"

@@ -66,7 +66,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 			AND table_name = '%s'
 		)
 	`, schemaName, tableName)
-	
+
 	var rows []map[string]interface{}
 	err = conn.QueryRows(checkQuery, &rows)
 	if err == nil && len(rows) > 0 && len(rows[0]) > 0 {
@@ -89,17 +89,17 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 		// Use merge handler for complex operations
 		if mergeStrategy != "replace" {
 			mergeHandler := NewSpreadsheetMergeHandler(conn, schemaName, tableName)
-			
+
 			// Use provided options or defaults
 			if mergeOptions.Strategy == "" {
 				mergeOptions.Strategy = mergeStrategy
 			}
-			
+
 			// Execute merge
 			if err := mergeHandler.ExecuteMerge(columns, data, mergeOptions); err != nil {
 				return nil, http.StatusInternalServerError, fmt.Errorf("merge operation failed: %v", err)
 			}
-			
+
 			// Get final row count
 			finalCount := existingRowCount + int64(len(data))
 			if mergeStrategy == "merge" || mergeStrategy == "smart_merge" {
@@ -112,7 +112,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 					}
 				}
 			}
-			
+
 			// Get table size
 			var sizeBytes int64
 			sizeQuery := fmt.Sprintf(
@@ -127,7 +127,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 					sizeBytes = size
 				}
 			}
-			
+
 			// Trigger schema refresh and update database name synchronously for better consistency
 			log.Printf("ChatService -> StoreSpreadsheetData (merge) -> Starting schema refresh and database name update for chatID: %s", chatID)
 			ctx := context.Background()
@@ -140,7 +140,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 				log.Printf("ChatService -> StoreSpreadsheetData -> Failed to update database name: %v", err)
 			}
 			log.Printf("ChatService -> StoreSpreadsheetData (merge) -> Completed schema refresh and database name update for chatID: %s", chatID)
-			
+
 			return &dtos.SpreadsheetUploadResponse{
 				TableName:   tableName,
 				RowCount:    int(finalCount),
@@ -149,7 +149,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 				UploadedAt:  time.Now(),
 			}, http.StatusOK, nil
 		}
-		
+
 		// Replace strategy - drop existing table
 		if mergeStrategy == "replace" {
 			dropQuery := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s CASCADE", schemaName, tableName)
@@ -167,7 +167,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 		columnDefs = append(columnDefs, "_id SERIAL PRIMARY KEY")
 		columnDefs = append(columnDefs, "_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
 		columnDefs = append(columnDefs, "_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-		
+
 		for _, col := range columns {
 			sanitizedCol := sanitizeColumnName(col)
 			columnDefs = append(columnDefs, fmt.Sprintf("%s TEXT", sanitizedCol))
@@ -188,7 +188,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 	// Insert data in batches
 	batchSize := 1000
 	totalRows := len(data)
-	
+
 	for i := 0; i < totalRows; i += batchSize {
 		end := i + batchSize
 		if end > totalRows {
@@ -196,7 +196,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 		}
 
 		batch := data[i:end]
-		
+
 		// Build insert query
 		valueStrings := make([]string, 0, len(batch))
 		for _, row := range batch {
@@ -223,7 +223,7 @@ func (s *chatService) StoreSpreadsheetData(userID, chatID, tableName string, col
 				valueStrings = append(valueStrings, fmt.Sprintf("(%s)", strings.Join(values, ", ")))
 			}
 		}
-		
+
 		// Skip this batch if no valid rows
 		if len(valueStrings) == 0 {
 			continue
@@ -345,14 +345,14 @@ func (s *chatService) GetSpreadsheetTableData(userID, chatID, tableName string, 
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get columns: %v", err)
 	}
 	log.Printf("ChatService -> GetSpreadsheetTableData -> All column data: %+v", columnData)
-	
+
 	// Filter out internal columns in Go
 	var columns []struct {
 		ColumnName string `gorm:"column:column_name"`
 	}
 	for _, col := range columnData {
 		var colName string
-		
+
 		// Handle both string and byte array formats
 		if nameStr, ok := col["column_name"].(string); ok {
 			colName = nameStr
@@ -362,7 +362,7 @@ func (s *chatService) GetSpreadsheetTableData(userID, chatID, tableName string, 
 			log.Printf("ChatService -> Unexpected column_name type: %T", col["column_name"])
 			continue
 		}
-		
+
 		// Skip internal columns
 		if strings.HasPrefix(colName, "_") {
 			continue
@@ -379,7 +379,7 @@ func (s *chatService) GetSpreadsheetTableData(userID, chatID, tableName string, 
 		columnNames = append(columnNames, col.ColumnName)
 	}
 	log.Printf("ChatService -> GetSpreadsheetTableData -> Column names: %v", columnNames)
-	
+
 	// If no columns found (shouldn't happen), use SELECT *
 	selectClause := "*"
 	if len(columnNames) > 0 {
@@ -388,19 +388,19 @@ func (s *chatService) GetSpreadsheetTableData(userID, chatID, tableName string, 
 
 	// Get paginated data - include ID column for row operations
 	offset := (page - 1) * pageSize
-	
+
 	// Determine the ID column name based on connection type
 	idColumn := "_id"
 	if connInfo.Config.Type == "google_sheets" || connInfo.Config.Type == constants.DatabaseTypeSpreadsheet {
 		idColumn = "_row_id"
 	}
-	
+
 	// Always include ID column in the select clause for row identification
 	selectWithId := idColumn
 	if selectClause != "*" && selectClause != "" {
 		selectWithId = idColumn + ", " + selectClause
 	}
-	
+
 	dataQuery := fmt.Sprintf(
 		"SELECT %s FROM %s.%s ORDER BY %s LIMIT %d OFFSET %d",
 		selectWithId,
@@ -418,7 +418,7 @@ func (s *chatService) GetSpreadsheetTableData(userID, chatID, tableName string, 
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get data: %v", err)
 	}
 	log.Printf("ChatService -> GetSpreadsheetTableData -> Retrieved %d rows", len(rows))
-	
+
 	// Process rows: decrypt and handle empty values
 	for i, row := range rows {
 		for key, value := range row {
@@ -427,16 +427,16 @@ func (s *chatService) GetSpreadsheetTableData(userID, chatID, tableName string, 
 				delete(rows[i], key)
 				continue
 			}
-			
+
 			// Handle null/empty values (but not for ID columns)
 			if key != "_id" && key != "_row_id" && (value == nil || (fmt.Sprintf("%v", value) == "")) {
 				rows[i][key] = "-"
 				continue
 			}
-			
+
 			// No decryption needed - data is stored in plain text
 		}
-		
+
 		// Normalize ID column to always be "_id" for frontend consistency
 		if connInfo.Config.Type == "google_sheets" {
 			if rowId, exists := row["_row_id"]; exists {
@@ -561,14 +561,14 @@ func (s *chatService) DownloadSpreadsheetTableData(userID, chatID, tableName str
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get columns: %v", err)
 	}
 	log.Printf("ChatService -> GetSpreadsheetTableData -> All column data: %+v", columnData)
-	
+
 	// Filter out internal columns in Go
 	var columns []struct {
 		ColumnName string `gorm:"column:column_name"`
 	}
 	for _, col := range columnData {
 		var colName string
-		
+
 		// Handle both string and byte array formats
 		if nameStr, ok := col["column_name"].(string); ok {
 			colName = nameStr
@@ -578,7 +578,7 @@ func (s *chatService) DownloadSpreadsheetTableData(userID, chatID, tableName str
 			log.Printf("ChatService -> Unexpected column_name type: %T", col["column_name"])
 			continue
 		}
-		
+
 		// Skip internal columns
 		if strings.HasPrefix(colName, "_") {
 			continue
@@ -614,7 +614,7 @@ func (s *chatService) DownloadSpreadsheetTableData(userID, chatID, tableName str
 	if err := conn.QueryRows(dataQuery, &rows); err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get data: %v", err)
 	}
-	
+
 	// Process rows: decrypt and handle empty values
 	for i, row := range rows {
 		for key, value := range row {
@@ -622,20 +622,20 @@ func (s *chatService) DownloadSpreadsheetTableData(userID, chatID, tableName str
 			if strings.HasPrefix(key, "_") && key != "_id" && key != "_row_id" {
 				continue
 			}
-			
+
 			// Handle null/empty values (but not for ID columns)
 			if key != "_id" && key != "_row_id" && (value == nil || (fmt.Sprintf("%v", value) == "")) {
 				rows[i][key] = "-"
 				continue
 			}
-			
+
 			// No decryption needed - data is stored in plain text
 		}
 	}
 
-	log.Printf("ChatService -> DownloadSpreadsheetTableData -> Returning %d columns and %d rows", 
+	log.Printf("ChatService -> DownloadSpreadsheetTableData -> Returning %d columns and %d rows",
 		len(columnNames), len(rows))
-	
+
 	return &dtos.SpreadsheetDownloadResponse{
 		TableName: tableName,
 		Columns:   columnNames,
@@ -677,14 +677,14 @@ func (s *chatService) DownloadSpreadsheetTableDataWithFilter(userID, chatID, tab
 		log.Printf("ChatService -> DownloadSpreadsheetTableDataWithFilter -> Error getting columns: %v", err)
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get columns: %v", err)
 	}
-	
+
 	// Filter out internal columns in Go
 	var columns []struct {
 		ColumnName string `gorm:"column:column_name"`
 	}
 	for _, col := range columnData {
 		var colName string
-		
+
 		// Handle both string and byte array formats
 		if nameStr, ok := col["column_name"].(string); ok {
 			colName = nameStr
@@ -694,7 +694,7 @@ func (s *chatService) DownloadSpreadsheetTableDataWithFilter(userID, chatID, tab
 			log.Printf("ChatService -> Unexpected column_name type: %T", col["column_name"])
 			continue
 		}
-		
+
 		// Skip internal columns
 		if strings.HasPrefix(colName, "_") {
 			continue
@@ -740,7 +740,7 @@ func (s *chatService) DownloadSpreadsheetTableDataWithFilter(userID, chatID, tab
 	if err := conn.QueryRows(dataQuery, &rows); err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("failed to get data: %v", err)
 	}
-	
+
 	// Process rows: decrypt and handle empty values
 	for i, row := range rows {
 		for key, value := range row {
@@ -748,20 +748,20 @@ func (s *chatService) DownloadSpreadsheetTableDataWithFilter(userID, chatID, tab
 			if strings.HasPrefix(key, "_") && key != "_id" && key != "_row_id" {
 				continue
 			}
-			
+
 			// Handle null/empty values (but not for ID columns)
 			if key != "_id" && key != "_row_id" && (value == nil || (fmt.Sprintf("%v", value) == "")) {
 				rows[i][key] = "-"
 				continue
 			}
-			
+
 			// No decryption needed - data is stored in plain text
 		}
 	}
 
-	log.Printf("ChatService -> DownloadSpreadsheetTableDataWithFilter -> Returning %d columns and %d rows", 
+	log.Printf("ChatService -> DownloadSpreadsheetTableDataWithFilter -> Returning %d columns and %d rows",
 		len(columnNames), len(rows))
-	
+
 	return &dtos.SpreadsheetDownloadResponse{
 		TableName: tableName,
 		Columns:   columnNames,
@@ -822,20 +822,20 @@ func sanitizeColumnName(name string) string {
 		}
 		return '_'
 	}, name)
-	
+
 	// Remove consecutive underscores
 	for strings.Contains(sanitized, "__") {
 		sanitized = strings.ReplaceAll(sanitized, "__", "_")
 	}
-	
+
 	// Trim underscores
 	sanitized = strings.Trim(sanitized, "_")
-	
+
 	// Ensure it starts with a letter
 	if len(sanitized) > 0 && (sanitized[0] >= '0' && sanitized[0] <= '9') {
 		sanitized = "col_" + sanitized
 	}
-	
+
 	// Convert to lowercase
 	return strings.ToLower(sanitized)
 }
@@ -843,40 +843,40 @@ func sanitizeColumnName(name string) string {
 // updateSpreadsheetDatabaseName updates the database name based on uploaded tables
 func (s *chatService) updateSpreadsheetDatabaseName(chatID string) error {
 	log.Printf("ChatService -> updateSpreadsheetDatabaseName -> CALLED! Starting for chatID: %s", chatID)
-	
+
 	// Get chat object
 	chatObjID, err := primitive.ObjectIDFromHex(chatID)
 	if err != nil {
 		return fmt.Errorf("invalid chat ID: %v", err)
 	}
-	
+
 	chat, err := s.chatRepo.FindByID(chatObjID)
 	if err != nil || chat == nil {
 		return fmt.Errorf("chat not found")
 	}
-	
+
 	// Only update for spreadsheet connections
 	if chat.Connection.Type != constants.DatabaseTypeSpreadsheet {
 		return nil
 	}
-	
+
 	// Get connection info to get schema
 	connInfo, exists := s.dbManager.GetConnectionInfo(chatID)
 	if !exists {
 		return fmt.Errorf("connection not found")
 	}
-	
+
 	// Get database connection
 	conn, err := s.dbManager.GetConnection(chatID)
 	if err != nil {
 		return fmt.Errorf("failed to get database connection: %v", err)
 	}
-	
+
 	schemaName := connInfo.Config.SchemaName
 	if schemaName == "" {
 		schemaName = fmt.Sprintf("conn_%s", chatID)
 	}
-	
+
 	// Query all tables in the schema
 	tableQuery := fmt.Sprintf(`
 		SELECT tablename 
@@ -884,13 +884,13 @@ func (s *chatService) updateSpreadsheetDatabaseName(chatID string) error {
 		WHERE schemaname = '%s'
 		ORDER BY tablename
 	`, schemaName)
-	
+
 	var tableData []map[string]interface{}
 	if err := conn.QueryRows(tableQuery, &tableData); err != nil {
 		log.Printf("ChatService -> updateSpreadsheetDatabaseName -> Error getting tables: %v", err)
 		return fmt.Errorf("failed to get tables: %v", err)
 	}
-	
+
 	// Collect table names
 	var tableNames []string
 	for _, row := range tableData {
@@ -898,7 +898,7 @@ func (s *chatService) updateSpreadsheetDatabaseName(chatID string) error {
 			tableNames = append(tableNames, tableName)
 		}
 	}
-	
+
 	// Generate database name from table names
 	var dbName string
 	if len(tableNames) == 0 {
@@ -925,10 +925,10 @@ func (s *chatService) updateSpreadsheetDatabaseName(chatID string) error {
 			}
 			cleanedNames[i] = cleaned
 		}
-		
+
 		// Join cleaned names
 		joined := strings.Join(cleanedNames, "_")
-		
+
 		// Limit to 50 characters
 		if len(joined) > 50 {
 			// Use a smarter approach: take first letters of each word if too long
@@ -967,19 +967,19 @@ func (s *chatService) updateSpreadsheetDatabaseName(chatID string) error {
 			dbName = joined
 		}
 	}
-	
+
 	// Update the connection database name
 	oldDbName := chat.Connection.Database
 	chat.Connection.Database = dbName
-	
+
 	log.Printf("ChatService -> updateSpreadsheetDatabaseName -> Updating database name from '%s' to '%s' for tables: %v", oldDbName, dbName, tableNames)
-	
+
 	// Save the updated chat
 	if err := s.chatRepo.Update(chat.ID, chat); err != nil {
 		log.Printf("ChatService -> updateSpreadsheetDatabaseName -> Failed to update chat: %v", err)
 		return fmt.Errorf("failed to update chat: %v", err)
 	}
-	
+
 	log.Printf("ChatService -> updateSpreadsheetDatabaseName -> SUCCESS! Updated database name from '%s' to '%s'", oldDbName, dbName)
 	return nil
 }

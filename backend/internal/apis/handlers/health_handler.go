@@ -28,13 +28,13 @@ func NewHealthHandler(mongoClient *mongodb.MongoDBClient, redisRepo redis.IRedis
 }
 
 type HealthResponse struct {
-	Status       string                          `json:"status"`
-	Timestamp    time.Time                       `json:"timestamp"`
-	Environment  string                          `json:"environment"`
-	Version      string                          `json:"version"`
-	Dependencies map[string]DependencyHealth     `json:"dependencies"`
-	LLMProviders map[string]*llm.HealthStatus    `json:"llm_providers"`
-	Metrics      map[string]*llm.RequestMetrics  `json:"metrics,omitempty"`
+	Status       string                         `json:"status"`
+	Timestamp    time.Time                      `json:"timestamp"`
+	Environment  string                         `json:"environment"`
+	Version      string                         `json:"version"`
+	Dependencies map[string]DependencyHealth    `json:"dependencies"`
+	LLMProviders map[string]*llm.HealthStatus   `json:"llm_providers"`
+	Metrics      map[string]*llm.RequestMetrics `json:"metrics,omitempty"`
 }
 
 type DependencyHealth struct {
@@ -84,7 +84,7 @@ func (h *HealthHandler) DetailedHealthCheck(c *gin.Context) {
 
 	// Get LLM provider health status
 	healthResponse.LLMProviders = h.llmManager.GetHealthStatus()
-	
+
 	// Check if any LLM provider is unhealthy
 	hasHealthyLLM := false
 	for _, status := range healthResponse.LLMProviders {
@@ -93,7 +93,7 @@ func (h *HealthHandler) DetailedHealthCheck(c *gin.Context) {
 			break
 		}
 	}
-	
+
 	if !hasHealthyLLM {
 		healthResponse.Status = "degraded"
 	}
@@ -118,11 +118,11 @@ func (h *HealthHandler) DetailedHealthCheck(c *gin.Context) {
 
 func (h *HealthHandler) checkMongoDB(ctx context.Context) DependencyHealth {
 	start := time.Now()
-	
+
 	// Try to ping MongoDB
 	err := h.mongoClient.Client.Ping(ctx, nil)
 	responseTime := time.Since(start)
-	
+
 	if err != nil {
 		config.Error("MongoDB health check failed:", err)
 		return DependencyHealth{
@@ -131,7 +131,7 @@ func (h *HealthHandler) checkMongoDB(ctx context.Context) DependencyHealth {
 			Error:        err.Error(),
 		}
 	}
-	
+
 	return DependencyHealth{
 		Status:       "healthy",
 		ResponseTime: responseTime,
@@ -140,11 +140,11 @@ func (h *HealthHandler) checkMongoDB(ctx context.Context) DependencyHealth {
 
 func (h *HealthHandler) checkRedis(ctx context.Context) DependencyHealth {
 	start := time.Now()
-	
+
 	// Try to ping Redis
 	err := h.redisRepo.Ping(ctx)
 	responseTime := time.Since(start)
-	
+
 	if err != nil {
 		config.Error("Redis health check failed:", err)
 		return DependencyHealth{
@@ -153,7 +153,7 @@ func (h *HealthHandler) checkRedis(ctx context.Context) DependencyHealth {
 			Error:        err.Error(),
 		}
 	}
-	
+
 	return DependencyHealth{
 		Status:       "healthy",
 		ResponseTime: responseTime,

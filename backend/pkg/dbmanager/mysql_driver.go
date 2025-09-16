@@ -2,6 +2,8 @@ package dbmanager
 
 import (
 	"context"
+	"crab-ai/internal/apis/dtos"
+	"crab-ai/internal/utils"
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
@@ -9,8 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"crab-ai/internal/apis/dtos"
-	"crab-ai/internal/utils"
 	"os"
 	"strings"
 	"sync"
@@ -429,4 +429,3 @@ func (d *MySQLDriver) FetchExampleRecords(ctx context.Context, db DBExecutor, ta
 	// Get example records
 	return fetcher.FetchExampleRecords(ctx, db, table, limit)
 }
-

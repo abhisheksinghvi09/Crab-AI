@@ -41,10 +41,10 @@ func TestManager_RegisterClient(t *testing.T) {
 
 	config := Config{
 		Provider:            "test",
-		Model:              "test-model",
-		APIKey:             "test-key",
+		Model:               "test-model",
+		APIKey:              "test-key",
 		MaxCompletionTokens: 1000,
-		Temperature:        0.7,
+		Temperature:         0.7,
 	}
 
 	// Test unsupported provider
